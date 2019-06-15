@@ -9,8 +9,10 @@ import org.entityflakes.processor.ProcessorBase
 import org.fractalpixel.gameutils.GameService
 import org.fractalpixel.gameutils.libgdxutils.buildTextureAtlas
 import org.fractalpixel.gameutils.libgdxutils.createDefaultTextureAtlasSettings
+import org.fractalpixel.gameutils.libgdxutils.loadTextureAtlasSettings
 import org.mistutils.strings.toSymbol
 import org.mistutils.symbol.Symbol
+import java.io.File
 import java.util.*
 import java.util.logging.Logger
 
@@ -22,8 +24,11 @@ import java.util.logging.Logger
  *
  * @param textureAtlasDirName name of the directory for textures under the root resource path, e.g. "textures/"
  * Also used as the name of the texture atlas.
+ * @param texturePackingSettingsFileName settings for the texture packer, should be placed in the texture source directory.
+ * Defaults to "textureAtlas.pack"
  */
-class TextureService(val textureAtlasDirName: String = "textures"): ProcessorBase() {
+class TextureService(val textureAtlasDirName: String = "textures",
+                     val texturePackingSettingsFileName: String = "textureAtlas.pack"): ProcessorBase() {
 
     private val textures = HashMap<Symbol, TextureRegion>()
 
@@ -95,12 +100,21 @@ class TextureService(val textureAtlasDirName: String = "textures"): ProcessorBas
      * Utility function that can be used during development.
      * @param projectResourcePath target path under project root where the resources will be added in the packagePath + texturePath
      *                     e.g."src/main/resources/"
+     * @param defaultSettings texture packer settings to use if no settings are found in the input texture directory.
+     *  If input settings found, they take precedence.
      */
     fun buildTextures(projectResourcePath: String = "src/main/resources/",
-                      settings: TexturePacker.Settings = createDefaultTextureAtlasSettings()) {
+                      defaultSettings: TexturePacker.Settings = createDefaultTextureAtlasSettings()) {
+
+
         val gameService = world[GameService::class]
         val textureAtlasDirectory = projectResourcePath + gameService.resourcePath + textureAtlasDirName
         val assetSourcePath = gameService.assetSourcePath + textureAtlasDirName
+
+        // Load settings if available, if not use defaults
+        val settingsFile = File(assetSourcePath + (if (!assetSourcePath.endsWith("/")) "/" else "") + texturePackingSettingsFileName)
+        val settings = loadTextureAtlasSettings(settingsFile) ?: defaultSettings
+
         buildTextureAtlas(assetSourcePath, textureAtlasDirectory, textureAtlasDirName, settings)
     }
 

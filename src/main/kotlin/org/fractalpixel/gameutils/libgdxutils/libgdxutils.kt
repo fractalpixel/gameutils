@@ -12,6 +12,8 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.tools.texturepacker.TexturePacker
+import com.badlogic.gdx.utils.Json
+import com.badlogic.gdx.utils.Logger
 import org.mistutils.geometry.double2.Double2
 import org.mistutils.geometry.double3.Double3
 import org.mistutils.geometry.double3.MutableDouble3
@@ -23,6 +25,9 @@ import org.mistutils.math.TauFloat
 import org.mistutils.math.fastFloor
 import org.mistutils.math.round
 import java.io.File
+import java.io.FileReader
+import java.io.IOError
+import java.io.IOException
 
 
 // Utilities to make libgdx work a bit smoother with some kotlin features, as well as with the used utility libraries.
@@ -107,6 +112,20 @@ fun createDefaultTextureAtlasSettings(): TexturePacker.Settings {
     settings.useIndexes = false
     settings.premultiplyAlpha = false
     return settings
+}
+
+/**
+ * Loads the texture generation / packer settings from the specified file if found, if not returns null.
+ */
+fun loadTextureAtlasSettings(file: File): TexturePacker.Settings? {
+    return if (file.exists()) {
+        Gdx.app.log("loadTextureAtlasSettings", "Loading texture atlas generation settings from '$file'.")
+        Json().fromJson(TexturePacker.Settings::class.java, FileReader(file))
+    }
+    else {
+        Gdx.app.log("loadTextureAtlasSettings", "No texture atlas generation settings found at '$file', using defaults.")
+        return null
+    }
 }
 
 private val tempMatrix = object : ThreadLocal<Matrix4>() {
