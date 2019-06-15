@@ -100,8 +100,16 @@ fun buildTextureAtlas(assetSourcePath: String,
     }
 
     // Generate atlas
-    if (log) println("Generating texture atlas, reading textures from $assetSourcePath and creating a texture atlas in $textureAtlasDirectory named $textureAtlasFileName")
-    TexturePacker.process(settings, assetSourcePath, textureAtlasDirectory, textureAtlasFileName);
+    if (log) println("Updating texture atlas if source files modified, reading textures from $assetSourcePath and creating a texture atlas in $textureAtlasDirectory named $textureAtlasFileName")
+    val updated = TexturePacker.processIfModified(settings, assetSourcePath, textureAtlasDirectory, textureAtlasFileName);
+    if (log) {
+        if (updated) {
+            println("Input textures or settings were modified, so texture atlas was updated")
+        }
+        else {
+            println("No modifications detected to input textures or settings, so texture atlas was not updated")
+        }
+    }
 }
 
 fun createDefaultTextureAtlasSettings(): TexturePacker.Settings {
