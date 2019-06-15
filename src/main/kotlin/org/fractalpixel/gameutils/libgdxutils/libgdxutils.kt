@@ -1,0 +1,364 @@
+package org.fractalpixel.gameutils.libgdxutils
+
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.TextureAtlas
+import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.badlogic.gdx.math.Matrix4
+import com.badlogic.gdx.math.Quaternion
+import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.scenes.scene2d.ui.Skin
+import com.badlogic.gdx.tools.texturepacker.TexturePacker
+import org.mistutils.geometry.double2.Double2
+import org.mistutils.geometry.double3.Double3
+import org.mistutils.geometry.double3.MutableDouble3
+import org.mistutils.geometry.int2.Int2
+import org.mistutils.geometry.int2.MutableInt2
+import org.mistutils.geometry.int3.Int3
+import org.mistutils.geometry.int3.MutableInt3
+import org.mistutils.math.TauFloat
+import org.mistutils.math.fastFloor
+import org.mistutils.math.round
+import java.io.File
+
+
+// Utilities to make libgdx work a bit smoother with some kotlin features, as well as with the used utility libraries.
+
+
+
+/**
+ * Replaces the default font in the skin with the specified font of the specified size.
+ */
+fun loadSkinWithFont(skinPathAndName: String, fontPathAndName: String, sizePixelsHigh: Int, fontStyleName: String = "default-font"): Skin {
+    return loadSkinWithFonts(skinPathAndName, "", listOf(FontInfo(fontPathAndName,
+        sizePixelsHigh,
+        styleName = fontStyleName)))
+}
+
+/**
+ * Loads the specified TTF fonts as bitmap fonts of the specified sizes with the skin.
+ * The styleName of the default skin font is generally 'default-font'
+ */
+fun loadSkinWithFonts(skinPathAndName: String, fontPath: String, fontInfos: List<FontInfo>): Skin {
+
+    // Create skin
+    val skin = Skin(TextureAtlas(Gdx.files.internal(skinPathAndName + ".atlas")))
+
+    // Create bitmap fonts of correct size for TTF fonts.
+    for (fontInfo in fontInfos) {
+        skin.add(fontInfo.styleName, fontInfo.getFont(fontPath), BitmapFont::class.java)
+    }
+
+    // Load the skin, so fonts get used with the correct widgets.
+    skin.load(Gdx.files.internal(skinPathAndName + ".json"))
+
+    return skin
+}
+
+
+
+/**
+ * Builds a texture atlas from all the images in the specified source path.
+ */
+fun buildTextureAtlas(assetSourcePath: String,
+                      textureAtlasPath: String?,
+                      settings: TexturePacker.Settings = createDefaultTextureAtlasSettings(),
+                      log: Boolean = true) {
+    if (textureAtlasPath == null) {
+        if (log) println("Can not generate textures, textureAtlasPath is null.")
+    }
+    else  {
+        val target = textureAtlasPath.replaceAfterLast('/', "")
+        val atlasFileName = textureAtlasPath.replaceBeforeLast('/', "").removePrefix("/")
+        buildTextureAtlas(assetSourcePath, target, atlasFileName, settings, log)
+    }
+}
+
+
+/**
+ * Builds a texture atlas from all the images in the specified source path.
+ */
+fun buildTextureAtlas(assetSourcePath: String,
+                      textureAtlasDirectory: String,
+                      textureAtlasName: String,
+                      settings: TexturePacker.Settings = createDefaultTextureAtlasSettings(),
+                      log: Boolean = true) {
+    // Clear out previous atlas
+    val textureAtlasFileName = textureAtlasName
+    val targetAtlas = File(textureAtlasDirectory + textureAtlasFileName)
+    if (targetAtlas.exists()) {
+        if (log) println("Deleting old texture atlas file at $targetAtlas")
+        targetAtlas.delete()
+    }
+
+    // Generate atlas
+    if (log) println("Generating texture atlas, reading textures from $assetSourcePath and creating a texture atlas in $textureAtlasDirectory named $textureAtlasFileName")
+    TexturePacker.process(settings, assetSourcePath, textureAtlasDirectory, textureAtlasFileName);
+}
+
+fun createDefaultTextureAtlasSettings(): TexturePacker.Settings {
+    val settings = TexturePacker.Settings()
+    settings.maxWidth = 512
+    settings.maxHeight = 512
+    settings.duplicatePadding = false
+    settings.useIndexes = false
+    settings.premultiplyAlpha = false
+    return settings
+}
+
+private val tempMatrix = object : ThreadLocal<Matrix4>() {
+    override fun initialValue(): Matrix4? {
+        return Matrix4()
+    }
+}
+
+private val tempQuat = object : ThreadLocal<Quaternion>() {
+    override fun initialValue(): Quaternion? {
+        return Quaternion()
+    }
+}
+
+private val tempVec = object : ThreadLocal<Vector3>() {
+    override fun initialValue(): Vector3? {
+        return Vector3()
+    }
+}
+
+/**
+ * Set this quaternion to the direction from the position towards the target, with the specified up direction (defaults to positive Y axis).
+ */
+fun Quaternion.setFromDirection(position: Vector3, target: Vector3, up: Vector3 = Vector3.Y, temporaryMatrix: Matrix4 = tempMatrix.get()) {
+    temporaryMatrix.idt().setToLookAt(position, target, up).getRotation(this)
+}
+
+/**
+ * Set this quaternion to the specified direction vector, with the specified up direction (defaults to positive Y axis).
+ */
+fun Quaternion.setFromDirection(direction: Vector3, up: Vector3 = Vector3.Y, temporaryMatrix: Matrix4 = tempMatrix.get()) {
+    temporaryMatrix.idt().setToLookAt(direction, up).getRotation(this)
+}
+
+/**
+ * Adds rotation around the specified axles to this quaternion, and normalizes this quaternion afterwards.
+ * @param rotationAroundX contains the rotation around the X axis, as number of turns.
+ * @param rotationAroundY contains the rotation around the X axis, as number of turns.
+ * @param rotationAroundZ contains the rotation around the X axis, as number of turns.
+ * @param scale scale to apply to the added rotations, defaults to 1.
+ * @param temporaryVector a temporary vector to use, by default uses a thread local vector instance.
+ * @param temporaryQuaternion temporary quaternion to use, by default uses a thread local quaternion instance.
+ */
+fun Quaternion.addRotation(rotationAroundX: Float,
+                           rotationAroundY: Float,
+                           rotationAroundZ: Float,
+                           scale: Float = 1f,
+                           temporaryVector: Vector3 = tempVec.get(),
+                           temporaryQuaternion: Quaternion = tempQuat.get()) {
+    addRotation(temporaryVector.set(rotationAroundX, rotationAroundY, rotationAroundZ), scale, temporaryVector, temporaryQuaternion)
+}
+
+/**
+ * Adds rotation around the specified axles to this quaternion, and normalizes this quaternion afterwards.
+ * @param rotationAroundAxles contains the rotation around each axis, in the member variables.
+ * @param scale scale to apply to the added rotations, defaults to 1.
+ * @param temporaryVector temporary vector to use, by default uses a thread local vector instance.
+ * @param temporaryQuaternion temporary quaternion to use, by default uses a thread local quaternion instance.
+ */
+fun Quaternion.addRotation(rotationAroundAxles: Vector3,
+                           scale: Float = 1f,
+                           temporaryVector: Vector3 = tempVec.get(),
+                           temporaryQuaternion: Quaternion = tempQuat.get()) {
+    temporaryVector.set(rotationAroundAxles)
+    val len = temporaryVector.len()
+    if (len > 0f) {
+        temporaryVector.scl(1f / len)
+        temporaryQuaternion.setFromAxisRad(temporaryVector, scale * len * TauFloat)
+        this.mulLeft(temporaryQuaternion)
+        this.nor()
+    }
+}
+
+/**
+ * Adds another vector to this vector, first rotating the vector to be added with the specified direction.
+ * @param direction direction to rotate the delta vector with.
+ * @param deltaX value to add to the x axis as seen using the direction.
+ * @param deltaY value to add to the y axis as seen using the direction.
+ * @param deltaZ value to add to the z axis as seen using the direction.
+ * @param scaling scaling to multiply the added vector with when it is added (does not modify the delta vector).
+ * @param temporaryVector temporary vector to use, by default uses a thread local vector instance.
+ */
+fun Vector3.addInDirection(direction: Quaternion, deltaX: Float, deltaY: Float, deltaZ: Float, scaling: Float = 1f, temporaryVector: Vector3 = tempVec.get()) {
+    addInDirection(direction, temporaryVector.set(deltaX, deltaY, deltaZ), scaling, temporaryVector)
+}
+
+/**
+ * Adds another vector to this vector, first rotating the vector to be added with the specified direction.
+ * @param direction direction to rotate the delta vector with.
+ * @param delta delta vector to be added
+ * @param scaling scaling to multiply the added vector with when it is added (does not modify the delta vector).
+ * @param temporaryVector temporary vector to use, by default uses a thread local vector instance.
+ */
+fun Vector3.addInDirection(direction: Quaternion, delta: Vector3, scaling: Float = 1f, temporaryVector: Vector3 = tempVec.get()) {
+    temporaryVector.set(delta).scl(scaling)
+    direction.transform(temporaryVector)
+    add(temporaryVector)
+}
+
+/**
+ * Set this vector to the value of the input vector, and return this vector.
+ */
+fun Vector3.set(v: Double3): Vector3 {
+    x = v.x.toFloat()
+    y = v.y.toFloat()
+    z = v.z.toFloat()
+    return this
+}
+
+/**
+ * Set this vector to the value of the input vector, and return this vector.
+ */
+fun Vector2.set(v: Double2): Vector2 {
+    x = v.x.toFloat()
+    y = v.y.toFloat()
+    return this
+}
+
+/**
+ * Set this vector to the value of the input vector, and return this vector.
+ */
+fun Vector3.set(v: Int3): Vector3 {
+    x = v.x.toFloat()
+    y = v.y.toFloat()
+    z = v.z.toFloat()
+    return this
+}
+
+/**
+ * Set this vector to the value of the input vector, and return this vector.
+ */
+fun Vector2.set(v: Int2, zValue: Int = 0): Vector2 {
+    x = v.x.toFloat()
+    y = v.y.toFloat()
+    return this
+}
+
+
+/**
+ * Set this vector to the value of the input vector, and return this vector.
+ */
+fun MutableDouble3.set(v: Vector3): Double3 {
+    x = v.x.toDouble()
+    y = v.y.toDouble()
+    z = v.z.toDouble()
+    return this
+}
+
+/**
+ * Set this vector to the value of the input vector, and return this vector.
+ * Rounds down to nearest integer (uses floor).
+ */
+fun MutableInt3.setWithFloor(v: Vector3): MutableInt3 {
+    x = v.x.fastFloor()
+    y = v.y.fastFloor()
+    z = v.z.fastFloor()
+    return this
+}
+
+/**
+ * Set this vector to the value of the input vector, and return this vector.
+ * Rounds to closest integer (uses round).
+ */
+fun MutableInt3.setWithRound(v: Vector3): MutableInt3 {
+    x = v.x.round()
+    y = v.y.round()
+    z = v.z.round()
+    return this
+}
+
+/**
+ * Set this vector to the value of the input vector, and return this vector.
+ * Rounds down to nearest integer (uses floor).
+ */
+fun MutableInt2.setWithFloor(v: Vector2): MutableInt2 {
+    x = v.x.fastFloor()
+    y = v.y.fastFloor()
+    return this
+}
+
+/**
+ * Set this vector to the value of the input vector, and return this vector.
+ * Rounds to closest integer (uses round).
+ */
+fun MutableInt2.setWithRound(v: Vector2): MutableInt2 {
+    x = v.x.round()
+    y = v.y.round()
+    return this
+}
+
+
+fun Int3.toVector3(vectorOut: Vector3 = Vector3()): Vector3 {
+    vectorOut.set(x.toFloat(),
+                  y.toFloat(),
+                  z.toFloat())
+    return vectorOut
+}
+
+fun Double3.toVector3(vectorOut: Vector3 = Vector3()): Vector3 {
+    vectorOut.set(x.toFloat(),
+                  y.toFloat(),
+                  z.toFloat())
+    return vectorOut
+}
+
+fun Int2.toVector2(vectorOut: Vector2 = Vector2()): Vector2 {
+    vectorOut.set(x.toFloat(),
+                  y.toFloat())
+    return vectorOut
+}
+
+fun Double2.toVector2(vectorOut: Vector2 = Vector2()): Vector2 {
+    vectorOut.set(x.toFloat(),
+                  y.toFloat())
+    return vectorOut
+}
+
+/**
+ * A draw method that takes a TextureRegion and provides flips and coloring as well
+ * @param x position to draw the sprite on
+ * @param y position to draw the sprite on
+ * @param originX position in the sprite to rotate around (and place at the x,y coordiante?)
+ * @param originY position in the sprite to rotate around (and place at the x,y coordiante?)
+ * @param width width to draw the sprite with
+ * @param height height to draw the sprite with
+ * @param scaleX scaling to apply to the final rendering after rotation (?)
+ * @param scaleY scaling to apply to the final rendering after rotation (?)
+ * @param rotation rotation of the sprite, counterclockwise, in degrees (360 to a turn)
+ * @param flipX true to flip the image along the x axis
+ * @param flipY true to flip the image along the y axis
+ * @param color color to use to tint this picture.  Multiplied with the image when rendering it.
+ */
+fun SpriteBatch.draw(region: TextureRegion,
+                     x: Float,
+                     y: Float,
+                     originX: Float,
+                     originY: Float,
+                     width: Float,
+                     height: Float,
+                     scaleX: Float,
+                     scaleY: Float,
+                     rotation: Float,
+                     flipX: Boolean,
+                     flipY: Boolean,
+                     color: Color = Color.WHITE) {
+
+    val oldColor = this.color
+    this.color = color
+    this.draw(region.texture, x, y, originX, originY, width, height, scaleX, scaleY, rotation,
+              region.regionX, region.regionY, region.regionWidth, region.regionHeight, flipX, flipY)
+    this.color = oldColor
+}
+
+
+
