@@ -114,11 +114,20 @@ fun buildTextureAtlas(assetSourcePath: String,
 
 fun createDefaultTextureAtlasSettings(): TexturePacker.Settings {
     val settings = TexturePacker.Settings()
-    settings.maxWidth = 512
-    settings.maxHeight = 512
+    settings.maxWidth = 2048
+    settings.maxHeight = 2048
+    settings.square = false
     settings.duplicatePadding = false
     settings.useIndexes = false
     settings.premultiplyAlpha = false
+    settings.bleed = false
+    settings.paddingX = 0
+    settings.paddingY = 0
+    settings.edgePadding = false
+    settings.stripWhitespaceX = false
+    settings.stripWhitespaceY = false
+    settings.rotation = false
+    settings.ignoreBlankImages = false
     return settings
 }
 
