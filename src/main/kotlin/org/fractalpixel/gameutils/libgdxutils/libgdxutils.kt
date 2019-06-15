@@ -128,6 +128,14 @@ fun loadTextureAtlasSettings(file: File): TexturePacker.Settings? {
     }
 }
 
+/**
+ * Saves the texture generation / packer settings to the specified file.
+ */
+fun saveTextureAtlasSettings(file: File, settings: TexturePacker.Settings) {
+    Gdx.app.log("saveTextureAtlasSettings", "Saving texture atlas generation settings to '$file'.")
+    file.writeText(Json().toJson(settings, TexturePacker.Settings::class.java))
+}
+
 private val tempMatrix = object : ThreadLocal<Matrix4>() {
     override fun initialValue(): Matrix4? {
         return Matrix4()

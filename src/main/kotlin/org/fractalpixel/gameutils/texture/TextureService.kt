@@ -10,6 +10,7 @@ import org.fractalpixel.gameutils.GameService
 import org.fractalpixel.gameutils.libgdxutils.buildTextureAtlas
 import org.fractalpixel.gameutils.libgdxutils.createDefaultTextureAtlasSettings
 import org.fractalpixel.gameutils.libgdxutils.loadTextureAtlasSettings
+import org.fractalpixel.gameutils.libgdxutils.saveTextureAtlasSettings
 import org.mistutils.strings.toSymbol
 import org.mistutils.symbol.Symbol
 import java.io.File
@@ -28,7 +29,8 @@ import java.util.logging.Logger
  * Defaults to "textureAtlas.pack"
  */
 class TextureService(val textureAtlasDirName: String = "textures",
-                     val texturePackingSettingsFileName: String = "textureAtlas.pack"): ProcessorBase() {
+                     var texturePackingSettingsFileName: String = "textureAtlas.pack",
+                     var createPackingSettingsFileIfMissing: Boolean = true): ProcessorBase() {
 
     private val textures = HashMap<Symbol, TextureRegion>()
 
@@ -113,7 +115,13 @@ class TextureService(val textureAtlasDirName: String = "textures",
 
         // Load settings if available, if not use defaults
         val settingsFile = File(assetSourcePath + (if (!assetSourcePath.endsWith("/")) "/" else "") + texturePackingSettingsFileName)
-        val settings = loadTextureAtlasSettings(settingsFile) ?: defaultSettings
+        val loadedSettings = loadTextureAtlasSettings(settingsFile)
+        val settings = loadedSettings ?: defaultSettings
+
+        // Save settings if not found if desired
+        if (loadedSettings == null && createPackingSettingsFileIfMissing) {
+            saveTextureAtlasSettings(settingsFile, settings)
+        }
 
         buildTextureAtlas(assetSourcePath, textureAtlasDirectory, textureAtlasDirName, settings)
     }
