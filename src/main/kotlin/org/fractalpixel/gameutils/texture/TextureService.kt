@@ -29,7 +29,7 @@ import java.util.logging.Logger
  * Defaults to "textureAtlas.pack"
  */
 class TextureService(val textureAtlasDirName: String = "textures",
-                     var texturePackingSettingsFileName: String = "textureAtlas.pack",
+                     var texturePackingSettingsFileName: String = "textureAtlasSettings.json",
                      var createPackingSettingsFileIfMissing: Boolean = true): ProcessorBase() {
 
     private val textures = HashMap<Symbol, TextureRegion>()
