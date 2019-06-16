@@ -10,6 +10,7 @@ import org.fractalpixel.gameutils.space.Location
 import org.fractalpixel.gameutils.space.Space
 import org.mistutils.geometry.volume.MutableVolume
 import org.mistutils.geometry.volume.Volume
+import java.util.logging.Logger
 
 
 /**
@@ -20,6 +21,12 @@ class EntitySpaceRenderer3D(val entityRenderer: EntityRenderer3D = DefaultEntity
 
     private val visibleWorld = MutableVolume()
     private val entityRenderList = ArrayList<Location>()
+
+    /**
+     * True when no EntitySpace was found in the same entity that this renderer is assigned to when trying to render the space.
+     */
+    var noEntitySpaceFound = false
+        private set
 
     override fun initLayer(world: World) {
         super.initLayer(world)
@@ -34,6 +41,8 @@ class EntitySpaceRenderer3D(val entityRenderer: EntityRenderer3D = DefaultEntity
         val space = entity?.get(Space::class) as? EntitySpace
 
         if (space != null) {
+            noEntitySpaceFound = false
+
             // Get visible world
             val cam = context.camera
             val x1 = cam.position.x - viewRadius
@@ -48,6 +57,13 @@ class EntitySpaceRenderer3D(val entityRenderer: EntityRenderer3D = DefaultEntity
             // Render all entities in the visible volume
             renderEntitiesInVolume(context, visibleWorld, space)
         }
+        else {
+            // Log once
+            if (!noEntitySpaceFound) {
+                noEntitySpaceFound = true
+                logger.warning("No EntitySpace assigned to the same entity that this EntitySpaceRenderer is assigned to, nothing to render!")
+            }
+        }
     }
 
     private fun renderEntitiesInVolume(context: RenderingContext3D,
@@ -60,5 +76,9 @@ class EntitySpaceRenderer3D(val entityRenderer: EntityRenderer3D = DefaultEntity
         for (location in entityRenderList) {
             entityRenderer.render(context, location.entity!!, location)
         }
+    }
+
+    companion object {
+        val logger: Logger = Logger.getLogger(EntitySpaceRenderer3D::class.simpleName)
     }
 }
