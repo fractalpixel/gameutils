@@ -10,7 +10,6 @@ import org.fractalpixel.gameutils.space.Location
 import org.fractalpixel.gameutils.space.Space
 import org.mistutils.geometry.volume.MutableVolume
 import org.mistutils.geometry.volume.Volume
-import java.util.logging.Logger
 
 
 /**
@@ -61,7 +60,8 @@ class EntitySpaceRenderer3D(val entityRenderer: EntityRenderer3D = DefaultEntity
             // Log once
             if (!noEntitySpaceFound) {
                 noEntitySpaceFound = true
-                logger.warning("No EntitySpace assigned to the same entity that this EntitySpaceRenderer is assigned to, nothing to render!")
+                // TODO: Find out some easy to use logging solution that doesn't throw an exception if it can't find a xml config file...
+                println("No EntitySpace assigned to the same entity that this EntitySpaceRenderer is assigned to, nothing to render!")
             }
         }
     }
@@ -76,9 +76,5 @@ class EntitySpaceRenderer3D(val entityRenderer: EntityRenderer3D = DefaultEntity
         for (location in entityRenderList) {
             entityRenderer.render(context, location.entity!!, location)
         }
-    }
-
-    companion object {
-        val logger: Logger = Logger.getLogger(EntitySpaceRenderer3D::class.simpleName)
     }
 }

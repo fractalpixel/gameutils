@@ -13,7 +13,6 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.tools.texturepacker.TexturePacker
 import com.badlogic.gdx.utils.Json
-import com.badlogic.gdx.utils.Logger
 import org.mistutils.geometry.double2.Double2
 import org.mistutils.geometry.double3.Double3
 import org.mistutils.geometry.double3.MutableDouble3
@@ -26,8 +25,6 @@ import org.mistutils.math.fastFloor
 import org.mistutils.math.round
 import java.io.File
 import java.io.FileReader
-import java.io.IOError
-import java.io.IOException
 
 
 // Utilities to make libgdx work a bit smoother with some kotlin features, as well as with the used utility libraries.

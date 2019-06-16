@@ -16,7 +16,6 @@ import org.mistutils.strings.toIdentifier
 import org.mistutils.strings.toSymbol
 import org.mistutils.symbol.Symbol
 import java.util.ArrayList
-import java.util.logging.Logger
 
 /**
  * A LibGDX game with an entity system.
@@ -41,11 +40,6 @@ abstract class Game(override val applicationName: String,
     var metrics = DefaultMetrics()
 
     /**
-     * Use for logging messages.
-     */
-    var log: Logger = Logger.getAnonymousLogger(Game::class.simpleName)
-
-    /**
      * Processor that takes care of clearing the screen to the background color.
      * Throws exception if it has been removed.
      */
@@ -57,8 +51,6 @@ abstract class Game(override val applicationName: String,
     val layerProcessor: LayerProcessor get() = world[LayerProcessor::class]
 
     override fun create() {
-        log.info("Creating")
-
         // Set application title
         Gdx.graphics.setTitle(applicationName)
 
@@ -84,8 +76,6 @@ abstract class Game(override val applicationName: String,
 
         // Notify listeners
         notifyGameListeners { it.onCreated(this) }
-
-        log.info("Done creating")
     }
 
     /**
@@ -141,13 +131,9 @@ abstract class Game(override val applicationName: String,
     }
 
     override fun dispose() {
-        log.info("Shutting down")
-
         notifyGameListeners { it.onShutdown(this) }
 
         world.shutdown()
-
-        log.info("Shutdown done")
     }
 
     override fun onPreferencesChanged() {

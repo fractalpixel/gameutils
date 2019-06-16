@@ -84,7 +84,8 @@ class TextureService(val textureAtlasDirName: String = "textures",
             texture = textureAtlas.findRegion(textureId.string)
             if (texture == null) {
                 val msg = "No texture region named '$textureId' found!"
-                Logger.getLogger(this.javaClass.name).warning(msg)
+                // TODO: Use sensible logging utility..
+                println(msg)
                 if (usePlaceholderIfNotFound) {
                     return getTexture(PLACEHOLDER_NAME, false)
                 }
