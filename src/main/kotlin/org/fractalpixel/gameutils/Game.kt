@@ -16,6 +16,7 @@ import org.mistutils.strings.toIdentifier
 import org.mistutils.strings.toSymbol
 import org.mistutils.symbol.Symbol
 import java.util.ArrayList
+import kotlin.concurrent.thread
 
 /**
  * A LibGDX game with an entity system.
@@ -180,8 +181,11 @@ abstract class Game(override val applicationName: String,
         else {
             // Create javafx if needed
             if (createJavaFX && !javaFxCreated) {
-                javafx.application.Application.launch(DummyJavaFXApp::class.java)
                 javaFxCreated = true
+                // TODO: fix
+                thread(isDaemon = true) {
+                    javafx.application.Application.launch(DummyJavaFXApp::class.java)
+                }
             }
 
             // Create metrics view
