@@ -127,7 +127,7 @@ class ShapeBuilder {
                 updateNormals: Boolean = true) {
 
         addTriangle(a, d, c, twoSided, invertFace, updateNormals)
-        addTriangle(b, d, a, twoSided, invertFace, updateNormals)
+        addTriangle(b, a, c, twoSided, invertFace, updateNormals)
     }
 
     /**
