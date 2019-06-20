@@ -1,7 +1,16 @@
 package org.fractalpixel.gameutils.libgdxutils
 
+import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Mesh
 import com.badlogic.gdx.graphics.VertexAttribute
+import com.badlogic.gdx.graphics.g3d.Material
+import com.badlogic.gdx.graphics.g3d.Model
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
+import com.badlogic.gdx.graphics.g3d.model.MeshPart
+import com.badlogic.gdx.graphics.g3d.model.Node
+import com.badlogic.gdx.graphics.g3d.model.NodePart
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.FloatArray
 import com.badlogic.gdx.utils.ShortArray
@@ -41,6 +50,8 @@ class ShapeBuilder {
     private val v2 = Vector3()
     private val v3 = Vector3()
     private val n = Vector3()
+
+    val modelBuilder = ModelBuilder()
 
     /**
      * Number of triangles currently in the mesh being built
@@ -162,6 +173,9 @@ class ShapeBuilder {
         }
     }
 
+    /**
+     * Creates a mesh from the shape defined in this shape builder.
+     */
     fun createMesh(isStatic: Boolean = true,
                    normalizeNormals: Boolean = true,
                    clearAfterwards: Boolean = true): Mesh {
@@ -169,7 +183,7 @@ class ShapeBuilder {
         if (normalizeNormals) normalizeNormals()
 
         val mesh = Mesh(isStatic,
-                vertexData.size / vertexEntrySize,
+             vertexData.size / vertexEntrySize,
                         indexes.size,
                         VertexAttribute.Position(),
                         VertexAttribute.Normal())
@@ -182,10 +196,35 @@ class ShapeBuilder {
     }
 
     /**
+     * Creates a model from the shape defined in this shape builder.
+     * Uses the specified [material] for the model.  Defaults to light gray color.
+     */
+    fun createModel(material: Material = Material(ColorAttribute.createDiffuse(Color.LIGHT_GRAY)),
+                    isStatic: Boolean = true,
+                    normalizeNormals: Boolean = true,
+                    clearAfterwards: Boolean = true): Model {
+
+        // Create mesh
+        val mesh = createMesh(isStatic, normalizeNormals, clearAfterwards)
+
+        // Create model
+        modelBuilder.begin()
+        modelBuilder.part("mesh", mesh, GL20.GL_TRIANGLES, material)
+        return modelBuilder.end()
+    }
+
+    /**
+     * Update the specified mesh with the vertices specified in this builder.
+     */
+    fun updateMeshVertices(mesh: Mesh) {
+        mesh.updateVertices(0, vertexData.items, 0, vertexData.size)
+    }
+
+    /**
      * Normalize all vertex normals
      */
     fun normalizeNormals() {
-        for (i in 0 .. nextVertexId-1) {
+        for (i in 0 until nextVertexId) {
             val index = i.toShort()
             getNormal(index, n)
             n.nor()
