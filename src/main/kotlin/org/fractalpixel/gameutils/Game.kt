@@ -8,7 +8,6 @@ import org.fractalpixel.gameutils.libgdxutils.ApplicationPreferenceChangeListene
 import org.fractalpixel.gameutils.rendering.RenderingProcessor
 import org.fractalpixel.gameutils.screenclear.ScreenClearProcessor
 import org.fractalpixel.gameutils.texture.TextureService
-import org.fractalpixel.gameutils.utils.DummyJavaFXApp
 import org.kwrench.metrics.DefaultMetrics
 import org.kwrench.strings.toIdentifier
 import org.kwrench.strings.toSymbol
