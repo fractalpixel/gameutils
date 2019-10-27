@@ -6,6 +6,7 @@ import org.entityflakes.World
 import org.fractalpixel.gameutils.layer.LayerProcessor
 import org.fractalpixel.gameutils.libgdxutils.ApplicationPreferenceChangeListener
 import org.fractalpixel.gameutils.rendering.RenderingProcessor
+import org.fractalpixel.gameutils.scheduler.ScheduleProcessor
 import org.fractalpixel.gameutils.screenclear.ScreenClearProcessor
 import org.fractalpixel.gameutils.texture.TextureService
 import org.kwrench.metrics.DefaultMetrics
@@ -13,7 +14,6 @@ import org.kwrench.strings.toIdentifier
 import org.kwrench.strings.toSymbol
 import org.kwrench.symbol.Symbol
 import java.util.ArrayList
-import kotlin.concurrent.thread
 
 /**
  * A LibGDX game with an entity system.
@@ -42,6 +42,11 @@ abstract class Game(override val applicationName: String,
      * Throws exception if it has been removed.
      */
     val screenClearProcessor: ScreenClearProcessor get() = world[ScreenClearProcessor::class]
+
+    /**
+     * @return processor that can be used to schedule events.
+     */
+    val scheduleProcessor: ScheduleProcessor get() = world[ScheduleProcessor::class]
 
     /**
      * @return processor that renders layers
@@ -82,6 +87,7 @@ abstract class Game(override val applicationName: String,
     protected open fun createDefaultProcessors(world: World) {
         // TODO: Service for getting resource root path (through game service)?
         world.addProcessor(GameService(this))
+        world.addProcessor(ScheduleProcessor())
         world.addProcessor(TextureService())
         world.addProcessor(ScreenClearProcessor())
         world.addProcessor(LayerProcessor())
