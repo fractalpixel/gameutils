@@ -5,7 +5,7 @@
 
     <groupId>org.fractalpixel</groupId>
     <artifactId>gameutils</artifactId>
-    <version>0.1.12</version>
+    <version>0.1.13</version>
     <packaging>jar</packaging>
 
     <name>GameUtils</name>
@@ -55,7 +55,7 @@
         <dependency>
             <groupId>com.github.fractalpixel</groupId>
             <artifactId>kwrench</artifactId>
-            <version>0.2.1</version>
+            <version>0.2.3</version>
         </dependency>
 
 
