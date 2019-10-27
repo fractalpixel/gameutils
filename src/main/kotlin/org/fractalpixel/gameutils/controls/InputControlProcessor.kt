@@ -3,7 +3,7 @@ package org.fractalpixel.gameutils.controls
 import org.entityflakes.World
 import org.entityflakes.processor.ProcessorBase
 import org.fractalpixel.gameutils.controls.inputproviders.*
-import org.mistutils.symbol.Symbol
+import org.kwrench.symbol.Symbol
 import java.util.*
 
 /**

@@ -1,7 +1,7 @@
 package org.fractalpixel.gameutils.controls.controller
 
 import com.badlogic.gdx.utils.ObjectFloatMap
-import org.mistutils.symbol.Symbol
+import org.kwrench.symbol.Symbol
 import java.util.*
 
 /**

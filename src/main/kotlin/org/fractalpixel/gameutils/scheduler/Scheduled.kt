@@ -2,7 +2,7 @@ package org.fractalpixel.gameutils.scheduler
 
 import org.entityflakes.ComponentBase
 import org.entityflakes.Entity
-import org.mistutils.time.Time
+import org.kwrench.time.Time
 import java.util.*
 
 /**

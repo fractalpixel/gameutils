@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.Vector2
 import org.entityflakes.Component
 import org.entityflakes.PolymorphicComponent
 import org.fractalpixel.gameutils.rendering.RenderingContext2D
-import org.mistutils.geometry.double3.Double3
+import org.kwrench.geometry.double3.Double3
 
 /**
  *

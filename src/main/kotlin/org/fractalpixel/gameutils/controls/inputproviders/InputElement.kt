@@ -1,6 +1,6 @@
 package org.fractalpixel.gameutils.controls.inputproviders
 
-import org.mistutils.symbol.Symbol
+import org.kwrench.symbol.Symbol
 
 
 /**

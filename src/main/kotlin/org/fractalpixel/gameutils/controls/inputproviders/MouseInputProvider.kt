@@ -5,9 +5,9 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
 import org.entityflakes.World
 import org.fractalpixel.gameutils.GameService
-import org.mistutils.strings.toSpaceSeparated
-import org.mistutils.strings.toSymbol
-import org.mistutils.symbol.Symbol
+import org.kwrench.strings.toSpaceSeparated
+import org.kwrench.strings.toSymbol
+import org.kwrench.symbol.Symbol
 
 /**
  *

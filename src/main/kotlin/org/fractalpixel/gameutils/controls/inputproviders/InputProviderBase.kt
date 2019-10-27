@@ -3,7 +3,7 @@ package org.fractalpixel.gameutils.controls.inputproviders
 import com.badlogic.gdx.utils.IntMap
 import com.badlogic.gdx.utils.ObjectMap
 import org.entityflakes.World
-import org.mistutils.symbol.Symbol
+import org.kwrench.symbol.Symbol
 import java.util.*
 
 /**

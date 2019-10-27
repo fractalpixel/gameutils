@@ -6,8 +6,8 @@ import org.fractalpixel.gameutils.layer.Layer2D
 import org.fractalpixel.gameutils.rendering.RenderingContext2D
 import org.fractalpixel.gameutils.space.EntitySpace
 import org.fractalpixel.gameutils.space.Location
-import org.mistutils.geometry.volume.MutableVolume
-import org.mistutils.geometry.volume.Volume
+import org.kwrench.geometry.volume.MutableVolume
+import org.kwrench.geometry.volume.Volume
 
 /**
  * Renders a 2D view of an entity space.

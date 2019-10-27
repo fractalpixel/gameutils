@@ -13,16 +13,16 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.tools.texturepacker.TexturePacker
 import com.badlogic.gdx.utils.Json
-import org.mistutils.geometry.double2.Double2
-import org.mistutils.geometry.double3.Double3
-import org.mistutils.geometry.double3.MutableDouble3
-import org.mistutils.geometry.int2.Int2
-import org.mistutils.geometry.int2.MutableInt2
-import org.mistutils.geometry.int3.Int3
-import org.mistutils.geometry.int3.MutableInt3
-import org.mistutils.math.TauFloat
-import org.mistutils.math.fastFloor
-import org.mistutils.math.round
+import org.kwrench.geometry.double2.Double2
+import org.kwrench.geometry.double3.Double3
+import org.kwrench.geometry.double3.MutableDouble3
+import org.kwrench.geometry.int2.Int2
+import org.kwrench.geometry.int2.MutableInt2
+import org.kwrench.geometry.int3.Int3
+import org.kwrench.geometry.int3.MutableInt3
+import org.kwrench.math.TauFloat
+import org.kwrench.math.fastFloor
+import org.kwrench.math.round
 import java.io.File
 import java.io.FileReader
 

@@ -2,11 +2,11 @@ package org.fractalpixel.gameutils.rendering
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.Vector2
-import org.mistutils.geometry.double3.Double3
-import org.mistutils.geometry.double3.MutableDouble3
-import org.mistutils.geometry.rectangle.MutableRect
-import org.mistutils.geometry.volume.MutableVolume
-import org.mistutils.math.map
+import org.kwrench.geometry.double3.Double3
+import org.kwrench.geometry.double3.MutableDouble3
+import org.kwrench.geometry.rectangle.MutableRect
+import org.kwrench.geometry.volume.MutableVolume
+import org.kwrench.math.map
 
 /**
  * Camera for 2d projection.

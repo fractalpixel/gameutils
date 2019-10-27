@@ -2,7 +2,7 @@ package org.fractalpixel.gameutils.space
 
 import org.entityflakes.Entity
 import org.entityflakes.ReusableComponentBase
-import org.mistutils.geometry.double3.Double3
+import org.kwrench.geometry.double3.Double3
 
 
 /**

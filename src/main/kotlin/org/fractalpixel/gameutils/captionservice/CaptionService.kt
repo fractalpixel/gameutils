@@ -7,8 +7,8 @@ import org.fractalpixel.gameutils.layer.layers.CenteredTextLayer
 import org.fractalpixel.gameutils.libgdxutils.FontInfo
 import org.fractalpixel.gameutils.scheduler.Scheduled
 import org.fractalpixel.gameutils.scheduler.ScheduledEvent
-import org.mistutils.interpolation.interpolators.CosineInterpolator
-import org.mistutils.time.Time
+import org.kwrench.interpolation.interpolators.CosineInterpolator
+import org.kwrench.time.Time
 
 /**
  * Used for displaying large messages to the player.

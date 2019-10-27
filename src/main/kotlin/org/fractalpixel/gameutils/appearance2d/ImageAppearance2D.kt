@@ -8,7 +8,7 @@ import org.entityflakes.Entity
 import org.fractalpixel.gameutils.libgdxutils.draw
 import org.fractalpixel.gameutils.rendering.RenderingContext2D
 import org.fractalpixel.gameutils.texture.TextureService
-import org.mistutils.geometry.double3.Double3
+import org.kwrench.geometry.double3.Double3
 
 /**
  * A 2D appearance that draws an image from a texture atlas.

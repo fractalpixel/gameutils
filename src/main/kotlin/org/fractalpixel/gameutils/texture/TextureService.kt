@@ -11,11 +11,10 @@ import org.fractalpixel.gameutils.libgdxutils.buildTextureAtlas
 import org.fractalpixel.gameutils.libgdxutils.createDefaultTextureAtlasSettings
 import org.fractalpixel.gameutils.libgdxutils.loadTextureAtlasSettings
 import org.fractalpixel.gameutils.libgdxutils.saveTextureAtlasSettings
-import org.mistutils.strings.toSymbol
-import org.mistutils.symbol.Symbol
+import org.kwrench.strings.toSymbol
+import org.kwrench.symbol.Symbol
 import java.io.File
 import java.util.*
-import java.util.logging.Logger
 
 /**
  * Service that loads textures at startup and allows fast retrieval of them.

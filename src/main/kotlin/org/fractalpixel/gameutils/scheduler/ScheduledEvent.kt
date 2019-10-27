@@ -1,8 +1,8 @@
 package org.fractalpixel.gameutils.scheduler
 
 import org.entityflakes.Entity
-import org.mistutils.math.relPos
-import org.mistutils.time.Time
+import org.kwrench.math.relPos
+import org.kwrench.time.Time
 
 /**
  * Event that will happen to some entity at a specified time

@@ -3,7 +3,7 @@ package org.fractalpixel.gameutils
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Preferences
 import org.entityflakes.World
-import org.mistutils.symbol.Symbol
+import org.kwrench.symbol.Symbol
 
 /**
  * Contains the methods provided by the [Game] for client usage

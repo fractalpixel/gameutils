@@ -3,16 +3,16 @@ package org.fractalpixel.gameutils.controls.inputproviders
 import java.util.*
 
 /**
- *
+ * Forward input provider listener events to all registered listeners.
  */
 class DelegatingInputProviderListener(): InputProviderListener, InputElementProvider {
     private val listeners = ArrayList<InputProviderListener>()
 
-    override final fun addListener(listener: InputProviderListener) {
+    override fun addListener(listener: InputProviderListener) {
         listeners.add(listener)
     }
 
-    override final fun removeListener(listener: InputProviderListener) {
+    override fun removeListener(listener: InputProviderListener) {
         listeners.remove(listener)
     }
 

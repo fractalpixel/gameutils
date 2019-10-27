@@ -3,8 +3,8 @@ package org.fractalpixel.gameutils.scheduler
 import org.entityflakes.Entity
 import org.entityflakes.entitymanager.ComponentRef
 import org.entityflakes.processor.EntityProcessorBase
-import org.mistutils.time.Time
-import org.mistutils.updating.strategies.VariableTimestepStrategy
+import org.kwrench.time.Time
+import org.kwrench.updating.strategies.VariableTimestepStrategy
 
 
 /**

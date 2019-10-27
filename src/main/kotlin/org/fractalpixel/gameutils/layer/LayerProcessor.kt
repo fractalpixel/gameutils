@@ -7,7 +7,7 @@ import org.entityflakes.entitygroup.EntityGroupListener
 import org.entityflakes.entitymanager.ComponentRef
 import org.entityflakes.processor.ProcessorWithEntitiesBase
 import org.fractalpixel.gameutils.rendering.RenderingProcessor
-import org.mistutils.updating.strategies.VariableTimestepStrategy
+import org.kwrench.updating.strategies.VariableTimestepStrategy
 
 
 /**

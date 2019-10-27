@@ -5,8 +5,8 @@ import org.entityflakes.Entity
 import org.entityflakes.EntityRef
 import org.entityflakes.entitymanager.ComponentRef
 import org.fractalpixel.gameutils.controls.controller.Controller
-import org.mistutils.strings.toSymbol
-import org.mistutils.symbol.Symbol
+import org.kwrench.strings.toSymbol
+import org.kwrench.symbol.Symbol
 import java.util.*
 
 /**

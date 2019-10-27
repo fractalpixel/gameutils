@@ -1,7 +1,6 @@
 package org.fractalpixel.gameutils
 
 import com.badlogic.gdx.*
-import javafx.application.Platform
 import org.entityflakes.DefaultWorld
 import org.entityflakes.World
 import org.fractalpixel.gameutils.layer.LayerProcessor
@@ -10,11 +9,10 @@ import org.fractalpixel.gameutils.rendering.RenderingProcessor
 import org.fractalpixel.gameutils.screenclear.ScreenClearProcessor
 import org.fractalpixel.gameutils.texture.TextureService
 import org.fractalpixel.gameutils.utils.DummyJavaFXApp
-import org.mistutils.metrics.DefaultMetrics
-import org.mistutils.metrics.view.MetricsView
-import org.mistutils.strings.toIdentifier
-import org.mistutils.strings.toSymbol
-import org.mistutils.symbol.Symbol
+import org.kwrench.metrics.DefaultMetrics
+import org.kwrench.strings.toIdentifier
+import org.kwrench.strings.toSymbol
+import org.kwrench.symbol.Symbol
 import java.util.ArrayList
 import kotlin.concurrent.thread
 
@@ -163,38 +161,7 @@ abstract class Game(override val applicationName: String,
         listeners.remove(listener)
     }
 
-    private var metricsView: MetricsView? = null
     private var javaFxCreated = false
-
-    /**
-     * Show metrics window.  Use metrics.report() to add metrics reports each frame or similar.
-     * If [createJavaFX] a JavaFX application is started up, so that the metrics window has a javafx context to use.
-     * @returns the created MetricsView
-     */
-    fun showMetrics(createJavaFX: Boolean = true): MetricsView {
-        val currentMetricsView = metricsView
-
-        return if (currentMetricsView != null) {
-            currentMetricsView.show()
-            currentMetricsView
-        }
-        else {
-            // Create javafx if needed
-            if (createJavaFX && !javaFxCreated) {
-                javaFxCreated = true
-                // TODO: fix
-                thread(isDaemon = true) {
-                    javafx.application.Application.launch(DummyJavaFXApp::class.java)
-                }
-            }
-
-            // Create metrics view
-            val newMetricsView = MetricsView(metrics)
-            metricsView = newMetricsView
-            newMetricsView.show()
-            newMetricsView
-        }
-    }
 
     private fun notifyGameListeners(notify: (GameListener) -> Unit) {
         // Notify processors implementing the correct listener interface

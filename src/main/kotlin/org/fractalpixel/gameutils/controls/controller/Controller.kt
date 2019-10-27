@@ -2,7 +2,7 @@ package org.fractalpixel.gameutils.controls.controller
 
 import org.entityflakes.Component
 import org.entityflakes.PolymorphicComponent
-import org.mistutils.symbol.Symbol
+import org.kwrench.symbol.Symbol
 
 
 /**

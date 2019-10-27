@@ -7,7 +7,7 @@ import org.fractalpixel.gameutils.appearance2d.Appearance2D
 import org.fractalpixel.gameutils.layer.Layer2D
 import org.fractalpixel.gameutils.space.EntitySpace
 import org.fractalpixel.gameutils.space.Location
-import org.mistutils.geometry.volume.MutableVolume
+import org.kwrench.geometry.volume.MutableVolume
 
 /**
  * A layer that renders the specified EntitySpace

@@ -1,8 +1,8 @@
 package org.fractalpixel.gameutils.space
 
 import org.entityflakes.Entity
-import org.mistutils.geometry.double3.Double3
-import org.mistutils.geometry.volume.Volume
+import org.kwrench.geometry.double3.Double3
+import org.kwrench.geometry.volume.Volume
 
 
 /**
@@ -23,7 +23,9 @@ interface EntitySpace: Space {
      */
     fun getEntities(volume: Volume, outputList: MutableList<Location>): MutableList<Location> {
         outputList.clear()
-        forEachEntity(volume, {e, el -> outputList.add(el)})
+        forEachEntity(volume) { _, location ->
+            outputList.add(location)
+        }
         return outputList
     }
 

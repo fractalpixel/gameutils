@@ -4,8 +4,8 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
 import org.entityflakes.World
 import org.fractalpixel.gameutils.GameService
-import org.mistutils.strings.toIdentifier
-import org.mistutils.strings.toSymbol
+import org.kwrench.strings.toIdentifier
+import org.kwrench.strings.toSymbol
 
 /**
  * Listens to keyboard inputs.
