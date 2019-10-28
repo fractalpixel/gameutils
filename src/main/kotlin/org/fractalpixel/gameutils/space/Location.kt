@@ -1,5 +1,6 @@
 package org.fractalpixel.gameutils.space
 
+import com.badlogic.gdx.math.Vector3
 import org.entityflakes.Entity
 import org.entityflakes.ReusableComponentBase
 import org.kwrench.geometry.double3.Double3
@@ -58,6 +59,13 @@ class Location(initialX: Double = 0.0,
     /**
      * Set a new position
      */
+    fun setPosition(newPos: Vector3) {
+        setPosition(newPos.x.toDouble(), newPos.y.toDouble(), newPos.z.toDouble())
+    }
+
+    /**
+     * Set a new position
+     */
     fun setPosition(newX: Double = 0.0,
                     newY: Double = 0.0,
                     newZ: Double = 0.0) {
@@ -83,6 +91,15 @@ class Location(initialX: Double = 0.0,
      * Adds the specified vector to the position
      */
     fun movePosition(positionDelta: Double3) {
+        setPosition(x + positionDelta.x,
+                    y + positionDelta.y,
+                    z + positionDelta.z)
+    }
+
+    /**
+     * Adds the specified vector to the position
+     */
+    fun movePosition(positionDelta: Vector3) {
         setPosition(x + positionDelta.x,
                     y + positionDelta.y,
                     z + positionDelta.z)
