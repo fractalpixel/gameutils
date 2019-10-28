@@ -17,7 +17,7 @@ class DefaultEntityRenderer3D: EntityRenderer3D {
     private val tempQuat = Quaternion()
 
     override fun render(context: RenderingContext3D, entity: Entity, entityLocation: Location) {
-        val appearance3D = appearance3DRef[entity]
+        val appearance3D = appearance3DRef.getOrNull(entity)
         if (appearance3D != null) {
             tempPos.set(entityLocation.x.toFloat(),
                         entityLocation.y.toFloat(),
