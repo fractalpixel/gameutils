@@ -18,7 +18,7 @@ import org.kwrench.geometry.volume.Volume
  * Renders a 3D view of an entity space that is in the same entity as this renderer.
  */
 class EntitySpaceRenderer3D(val entityRenderer: EntityRenderer3D = DefaultEntityRenderer3D(),
-                            var viewRadius: Float = 1000f): Layer3D() {
+                            var viewRadius: Float = 10000f): Layer3D() {
 
     private val visibleWorld = MutableVolume()
     private val entityRenderList = ArrayList<Location>()

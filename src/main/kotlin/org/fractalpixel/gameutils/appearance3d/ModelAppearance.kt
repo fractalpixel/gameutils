@@ -8,7 +8,8 @@ import org.entityflakes.Entity
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
 
 /**
- *
+ * Appearance using a model to render the entity.
+ * Creates a local ModelInstance.
  */
 class ModelAppearance(val model: Model): Appearance3D {
 
@@ -22,9 +23,10 @@ class ModelAppearance(val model: Model): Appearance3D {
                         dir: Quaternion,
                         renderContext: RenderingContext3D
     ) {
-        instance.transform.setTranslation(pos)
-        instance.transform.rotate(dir)
+        // Set location and direction
+        instance.transform.set(pos, dir)
 
+        // Render
         renderContext.modelBatch.render(instance, renderContext.environment)
     }
 
