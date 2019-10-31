@@ -1,11 +1,13 @@
 package org.fractalpixel.gameutils.space.rendering
 
 import org.entityflakes.World
+import org.entityflakes.entitymanager.ComponentRef
 import org.fractalpixel.gameutils.appearance3d.EntityRenderer3D
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
 import org.fractalpixel.gameutils.appearance3d.DefaultEntityRenderer3D
 import org.fractalpixel.gameutils.layer.Layer3D
 import org.fractalpixel.gameutils.space.EntitySpace
+import org.fractalpixel.gameutils.space.Facing
 import org.fractalpixel.gameutils.space.Location
 import org.fractalpixel.gameutils.space.Space
 import org.kwrench.geometry.volume.MutableVolume
@@ -74,7 +76,8 @@ class EntitySpaceRenderer3D(val entityRenderer: EntityRenderer3D = DefaultEntity
 
         // Render entities
         for (location in entityRenderList) {
-            entityRenderer.render(context, location.entity!!, location)
+            val entity = location.entity!!
+            entityRenderer.render(context, entity, location)
         }
     }
 }

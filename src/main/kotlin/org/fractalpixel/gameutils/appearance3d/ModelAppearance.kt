@@ -23,7 +23,8 @@ class ModelAppearance(val model: Model): Appearance3D {
                         renderContext: RenderingContext3D
     ) {
         instance.transform.setTranslation(pos)
-        // TODO: Direction & pos
+        instance.transform.rotate(dir)
+
         renderContext.modelBatch.render(instance, renderContext.environment)
     }
 

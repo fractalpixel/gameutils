@@ -250,7 +250,7 @@ fun Vector3.addInDirection(direction: Quaternion, delta: Vector3, scaling: Float
 /**
  * Set this vector to the value of the input vector, and return this vector.
  */
-fun Vector3.set(v: Double3): Vector3 {
+inline fun Vector3.set(v: Double3): Vector3 {
     x = v.x.toFloat()
     y = v.y.toFloat()
     z = v.z.toFloat()
@@ -260,7 +260,7 @@ fun Vector3.set(v: Double3): Vector3 {
 /**
  * Set this vector to the value of the input vector, and return this vector.
  */
-fun Vector2.set(v: Double2): Vector2 {
+inline fun Vector2.set(v: Double2): Vector2 {
     x = v.x.toFloat()
     y = v.y.toFloat()
     return this
@@ -269,7 +269,7 @@ fun Vector2.set(v: Double2): Vector2 {
 /**
  * Set this vector to the value of the input vector, and return this vector.
  */
-fun Vector3.set(v: Int3): Vector3 {
+inline fun Vector3.set(v: Int3): Vector3 {
     x = v.x.toFloat()
     y = v.y.toFloat()
     z = v.z.toFloat()
@@ -279,7 +279,7 @@ fun Vector3.set(v: Int3): Vector3 {
 /**
  * Set this vector to the value of the input vector, and return this vector.
  */
-fun Vector2.set(v: Int2, zValue: Int = 0): Vector2 {
+inline fun Vector2.set(v: Int2, zValue: Int = 0): Vector2 {
     x = v.x.toFloat()
     y = v.y.toFloat()
     return this
@@ -289,7 +289,7 @@ fun Vector2.set(v: Int2, zValue: Int = 0): Vector2 {
 /**
  * Set this vector to the value of the input vector, and return this vector.
  */
-fun MutableDouble3.set(v: Vector3): Double3 {
+inline fun MutableDouble3.set(v: Vector3): Double3 {
     x = v.x.toDouble()
     y = v.y.toDouble()
     z = v.z.toDouble()
@@ -300,7 +300,7 @@ fun MutableDouble3.set(v: Vector3): Double3 {
  * Set this vector to the value of the input vector, and return this vector.
  * Rounds down to nearest integer (uses floor).
  */
-fun MutableInt3.setWithFloor(v: Vector3): MutableInt3 {
+inline fun MutableInt3.setWithFloor(v: Vector3): MutableInt3 {
     x = v.x.fastFloor()
     y = v.y.fastFloor()
     z = v.z.fastFloor()
@@ -311,7 +311,7 @@ fun MutableInt3.setWithFloor(v: Vector3): MutableInt3 {
  * Set this vector to the value of the input vector, and return this vector.
  * Rounds to closest integer (uses round).
  */
-fun MutableInt3.setWithRound(v: Vector3): MutableInt3 {
+inline fun MutableInt3.setWithRound(v: Vector3): MutableInt3 {
     x = v.x.round()
     y = v.y.round()
     z = v.z.round()
@@ -322,7 +322,7 @@ fun MutableInt3.setWithRound(v: Vector3): MutableInt3 {
  * Set this vector to the value of the input vector, and return this vector.
  * Rounds down to nearest integer (uses floor).
  */
-fun MutableInt2.setWithFloor(v: Vector2): MutableInt2 {
+inline fun MutableInt2.setWithFloor(v: Vector2): MutableInt2 {
     x = v.x.fastFloor()
     y = v.y.fastFloor()
     return this
@@ -332,34 +332,34 @@ fun MutableInt2.setWithFloor(v: Vector2): MutableInt2 {
  * Set this vector to the value of the input vector, and return this vector.
  * Rounds to closest integer (uses round).
  */
-fun MutableInt2.setWithRound(v: Vector2): MutableInt2 {
+inline fun MutableInt2.setWithRound(v: Vector2): MutableInt2 {
     x = v.x.round()
     y = v.y.round()
     return this
 }
 
 
-fun Int3.toVector3(vectorOut: Vector3 = Vector3()): Vector3 {
+inline fun Int3.toVector3(vectorOut: Vector3 = Vector3()): Vector3 {
     vectorOut.set(x.toFloat(),
                   y.toFloat(),
                   z.toFloat())
     return vectorOut
 }
 
-fun Double3.toVector3(vectorOut: Vector3 = Vector3()): Vector3 {
+inline fun Double3.toVector3(vectorOut: Vector3 = Vector3()): Vector3 {
     vectorOut.set(x.toFloat(),
                   y.toFloat(),
                   z.toFloat())
     return vectorOut
 }
 
-fun Int2.toVector2(vectorOut: Vector2 = Vector2()): Vector2 {
+inline fun Int2.toVector2(vectorOut: Vector2 = Vector2()): Vector2 {
     vectorOut.set(x.toFloat(),
                   y.toFloat())
     return vectorOut
 }
 
-fun Double2.toVector2(vectorOut: Vector2 = Vector2()): Vector2 {
+inline fun Double2.toVector2(vectorOut: Vector2 = Vector2()): Vector2 {
     vectorOut.set(x.toFloat(),
                   y.toFloat())
     return vectorOut
