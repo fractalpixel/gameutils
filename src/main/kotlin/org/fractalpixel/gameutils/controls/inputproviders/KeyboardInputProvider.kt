@@ -3,7 +3,7 @@ package org.fractalpixel.gameutils.controls.inputproviders
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
 import org.entityflakes.World
-import org.fractalpixel.gameutils.GameService
+import org.fractalpixel.gameutils.GameSystem
 import org.kwrench.strings.toIdentifier
 import org.kwrench.strings.toSymbol
 
@@ -29,12 +29,12 @@ class KeyboardInputProvider : InputProviderBase() {
         registerKeys()
 
         // Listen to inputs
-        world[GameService::class].addInputListener(keyListener)
+        world[GameSystem::class].addInputListener(keyListener)
     }
 
     override fun doDispose(world: World) {
         // Stop listening to inputs
-        world[GameService::class].removeInputListener(keyListener)
+        world[GameSystem::class].removeInputListener(keyListener)
     }
 
     private fun registerKeys() {

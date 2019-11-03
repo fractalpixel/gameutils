@@ -7,7 +7,7 @@ import org.entityflakes.ComponentBase
 import org.entityflakes.Entity
 import org.fractalpixel.gameutils.libgdxutils.draw
 import org.fractalpixel.gameutils.rendering.RenderingContext2D
-import org.fractalpixel.gameutils.texture.TextureService
+import org.fractalpixel.gameutils.texture.TextureSystem
 import org.kwrench.geometry.double3.Double3
 
 /**
@@ -56,7 +56,7 @@ class ImageAppearance2D(initialTextureName: String?,
     private fun initializeTexture() {
         val name = textureName
         if (texture == null && name != null) {
-            val textureService = entity!!.world[TextureService::class]
+            val textureService = entity!!.world[TextureSystem::class]
             texture = textureService.getTexture(name)
         }
     }

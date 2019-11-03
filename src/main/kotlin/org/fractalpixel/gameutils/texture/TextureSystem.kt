@@ -5,8 +5,8 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.tools.texturepacker.TexturePacker
 import org.entityflakes.World
-import org.entityflakes.processor.ProcessorBase
-import org.fractalpixel.gameutils.GameService
+import org.entityflakes.system.SystemBase
+import org.fractalpixel.gameutils.GameSystem
 import org.fractalpixel.gameutils.libgdxutils.buildTextureAtlas
 import org.fractalpixel.gameutils.libgdxutils.createDefaultTextureAtlasSettings
 import org.fractalpixel.gameutils.libgdxutils.loadTextureAtlasSettings
@@ -27,9 +27,9 @@ import java.util.*
  * @param texturePackingSettingsFileName settings for the texture packer, should be placed in the texture source directory.
  * Defaults to "textureAtlas.pack"
  */
-class TextureService(val textureAtlasDirName: String = "textures",
-                     var texturePackingSettingsFileName: String = "textureAtlasSettings.json",
-                     var createPackingSettingsFileIfMissing: Boolean = true): ProcessorBase() {
+class TextureSystem(val textureAtlasDirName: String = "textures",
+                    var texturePackingSettingsFileName: String = "textureAtlasSettings.json",
+                    var createPackingSettingsFileIfMissing: Boolean = true): SystemBase() {
 
     private val textures = HashMap<Symbol, TextureRegion>()
 
@@ -37,7 +37,7 @@ class TextureService(val textureAtlasDirName: String = "textures",
     lateinit var textureAtlas: TextureAtlas
 
     override fun doInit(world: World) {
-        val gameService = world[GameService::class]
+        val gameService = world[GameSystem::class]
 
         // Build path to textures
         textureAtlasPath = "${gameService.resourcePath}$textureAtlasDirName/$textureAtlasDirName.atlas"
@@ -109,7 +109,7 @@ class TextureService(val textureAtlasDirName: String = "textures",
                       defaultSettings: TexturePacker.Settings = createDefaultTextureAtlasSettings()) {
 
 
-        val gameService = world[GameService::class]
+        val gameService = world[GameSystem::class]
         val textureAtlasDirectory = projectResourcePath + gameService.resourcePath + textureAtlasDirName
         val assetSourcePath = gameService.assetSourcePath + textureAtlasDirName
 

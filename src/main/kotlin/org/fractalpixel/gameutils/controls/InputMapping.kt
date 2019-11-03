@@ -1,7 +1,7 @@
 package org.fractalpixel.gameutils.controls
 
 import com.badlogic.gdx.Gdx
-import org.fractalpixel.gameutils.GameService
+import org.fractalpixel.gameutils.GameSystem
 import org.fractalpixel.gameutils.controls.inputproviders.InputElement
 import org.kwrench.symbol.Symbol
 import java.util.*
@@ -72,8 +72,8 @@ class InputMapping(val bindings: MutableMap<Symbol, Symbol> = LinkedHashMap<Symb
     /**
      * Save bindings to application preferences.
      */
-    fun saveBindingConfiguration(gameService: GameService) {
-        val preferences = gameService.preferences
+    fun saveBindingConfiguration(gameSystem: GameSystem) {
+        val preferences = gameSystem.preferences
         preferences.putString(bindings_preference_base_key + bindingsKey, getBindingConfiguration())
         preferences.flush()
     }
@@ -82,8 +82,8 @@ class InputMapping(val bindings: MutableMap<Symbol, Symbol> = LinkedHashMap<Symb
      * Load bindings from the application preferences.
      * Ignore any errors in it.
      */
-    fun loadBindingConfiguration(gameService: GameService) {
-        readBindingConfiguration(gameService.preferences.getString(bindings_preference_base_key + bindingsKey, "\n"))
+    fun loadBindingConfiguration(gameSystem: GameSystem) {
+        readBindingConfiguration(gameSystem.preferences.getString(bindings_preference_base_key + bindingsKey, "\n"))
     }
 
     companion object {

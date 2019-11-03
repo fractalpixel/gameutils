@@ -2,7 +2,7 @@ package org.fractalpixel.gameutils.controls.controller
 
 import org.entityflakes.Component
 import org.entityflakes.Entity
-import org.fractalpixel.gameutils.controls.InputControlProcessor
+import org.fractalpixel.gameutils.controls.InputControlSystem
 import org.fractalpixel.gameutils.controls.InputMapping
 import org.fractalpixel.gameutils.controls.inputproviders.InputElement
 import org.fractalpixel.gameutils.controls.inputproviders.InputProviderListener
@@ -15,11 +15,11 @@ import org.fractalpixel.gameutils.controls.inputproviders.InputProviderListener
 class InputController(var bindings: InputMapping = InputMapping()) : ControllerBase(), Component,
     InputProviderListener {
 
-    private lateinit var inputControlProcessor: InputControlProcessor
+    private lateinit var inputControlSystem: InputControlSystem
 
     override fun init(entity: Entity) {
-        inputControlProcessor = entity.world[InputControlProcessor::class]
-        inputControlProcessor.addListener(this)
+        inputControlSystem = entity.world[InputControlSystem::class]
+        inputControlSystem.addListener(this)
     }
 
     override fun onInputElementChange(inputElement: InputElement, value: Float) {
@@ -28,7 +28,7 @@ class InputController(var bindings: InputMapping = InputMapping()) : ControllerB
     }
 
     override fun dispose() {
-        inputControlProcessor.removeListener(this)
+        inputControlSystem.removeListener(this)
         clearListeners()
         clearControlValues()
     }

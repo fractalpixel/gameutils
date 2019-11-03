@@ -1,7 +1,7 @@
 package org.fractalpixel.gameutils.controls
 
 import org.entityflakes.World
-import org.entityflakes.processor.ProcessorBase
+import org.entityflakes.system.SystemBase
 import org.fractalpixel.gameutils.controls.inputproviders.*
 import org.kwrench.symbol.Symbol
 import java.util.*
@@ -9,7 +9,7 @@ import java.util.*
 /**
  * Keeps track of input providers, and allows listening to InputElements.
  */
-class InputControlProcessor(vararg val initialInputProviders: InputProvider = arrayOf(KeyboardInputProvider(), MouseInputProvider())): ProcessorBase(),
+class InputControlSystem(vararg val initialInputProviders: InputProvider = arrayOf(KeyboardInputProvider(), MouseInputProvider())): SystemBase(),
     InputElementProvider {
 
     private val inputElements_: MutableMap<Symbol, InputElement> = LinkedHashMap()

@@ -3,16 +3,16 @@ package org.fractalpixel.gameutils.screenclear
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
-import org.entityflakes.processor.ProcessorBase
-import org.fractalpixel.gameutils.rendering.RenderingProcessor
+import org.entityflakes.system.SystemBase
+import org.fractalpixel.gameutils.rendering.RenderingSystem
 
 /**
- * Simple processor that just clears the screen each frame.  Should be added before other rendering processors.
+ * Simple system that just clears the screen each frame.  Should be added before other rendering processors.
  */
-class ScreenClearProcessor(var backgroundColor: Color = Color(Color.BLACK),
-                           var clearColorBuffer: Boolean = true,
-                           var clearDepthBuffer: Boolean = true,
-                           var clearStencilBuffer: Boolean = true): ProcessorBase(), RenderingProcessor {
+class ScreenClearSystem(var backgroundColor: Color = Color(Color.BLACK),
+                        var clearColorBuffer: Boolean = true,
+                        var clearDepthBuffer: Boolean = true,
+                        var clearStencilBuffer: Boolean = true): SystemBase(), RenderingSystem {
 
     override fun render() {
         // Set background color

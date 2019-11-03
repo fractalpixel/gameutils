@@ -3,12 +3,12 @@ package org.fractalpixel.gameutils
 import com.badlogic.gdx.*
 import org.entityflakes.DefaultWorld
 import org.entityflakes.World
-import org.fractalpixel.gameutils.layer.LayerProcessor
+import org.fractalpixel.gameutils.layer.LayerSystem
 import org.fractalpixel.gameutils.libgdxutils.ApplicationPreferenceChangeListener
-import org.fractalpixel.gameutils.rendering.RenderingProcessor
-import org.fractalpixel.gameutils.scheduler.ScheduleProcessor
-import org.fractalpixel.gameutils.screenclear.ScreenClearProcessor
-import org.fractalpixel.gameutils.texture.TextureService
+import org.fractalpixel.gameutils.rendering.RenderingSystem
+import org.fractalpixel.gameutils.scheduler.ScheduleSystem
+import org.fractalpixel.gameutils.screenclear.ScreenClearSystem
+import org.fractalpixel.gameutils.texture.TextureSystem
 import org.kwrench.metrics.DefaultMetrics
 import org.kwrench.strings.toIdentifier
 import org.kwrench.strings.toSymbol
@@ -41,17 +41,17 @@ abstract class Game(override val applicationName: String,
      * Processor that takes care of clearing the screen to the background color.
      * Throws exception if it has been removed.
      */
-    val screenClearProcessor: ScreenClearProcessor get() = world[ScreenClearProcessor::class]
+    val screenClearProcessor: ScreenClearSystem get() = world[ScreenClearSystem::class]
 
     /**
      * @return processor that can be used to schedule events.
      */
-    val scheduleProcessor: ScheduleProcessor get() = world[ScheduleProcessor::class]
+    val scheduleSystem: ScheduleSystem get() = world[ScheduleSystem::class]
 
     /**
      * @return processor that renders layers
      */
-    val layerProcessor: LayerProcessor get() = world[LayerProcessor::class]
+    val layerProcessor: LayerSystem get() = world[LayerSystem::class]
 
     override fun create() {
         // Set application title
@@ -86,11 +86,11 @@ abstract class Game(override val applicationName: String,
      */
     protected open fun createDefaultProcessors(world: World) {
         // TODO: Service for getting resource root path (through game service)?
-        world.addProcessor(GameService(this))
-        world.addProcessor(ScheduleProcessor())
-        world.addProcessor(TextureService())
-        world.addProcessor(ScreenClearProcessor())
-        world.addProcessor(LayerProcessor())
+        world.addSystem(GameSystem(this))
+        world.addSystem(ScheduleSystem())
+        world.addSystem(TextureSystem())
+        world.addSystem(ScreenClearSystem())
+        world.addSystem(LayerSystem())
     }
 
     /**
@@ -115,9 +115,9 @@ abstract class Game(override val applicationName: String,
         // Check if world.stop() was called.
         if (world.stopRequested) Gdx.app.exit()
 
-        // Render any processors that implement RenderingProcessor
-        for (processor in world.processors) {
-            if (processor is RenderingProcessor) processor.render()
+        // Render any systems that implement RenderingSystem
+        for (system in world.systems) {
+            if (system is RenderingSystem) system.render()
         }
     }
 
@@ -145,10 +145,7 @@ abstract class Game(override val applicationName: String,
         notifyGameListeners { it.onPreferencesChanged(this, prefs) }
     }
 
-    override val preferences: Preferences
-        get() {
-        return Gdx.app.getPreferences(preferencesKey.string)
-    }
+    override val preferences: Preferences get() = Gdx.app.getPreferences(preferencesKey.string)
 
     override fun addInputListener(inputProcessor: InputProcessor) {
         inputMultiplexer.addProcessor(inputProcessor)
@@ -166,13 +163,11 @@ abstract class Game(override val applicationName: String,
         listeners.remove(listener)
     }
 
-    private var javaFxCreated = false
-
     private fun notifyGameListeners(notify: (GameListener) -> Unit) {
-        // Notify processors implementing the correct listener interface
-        for (processor in world.processors) {
-            if (processor is GameListener) {
-                notify(processor)
+        // Notify systems implementing the correct listener interface
+        for (systems in world.systems) {
+            if (systems is GameListener) {
+                notify(systems)
             }
         }
 

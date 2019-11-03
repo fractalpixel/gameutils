@@ -1,11 +1,11 @@
 package org.fractalpixel.gameutils.rendering
 
-import org.entityflakes.processor.Processor
+import org.entityflakes.system.System
 
 /**
  * Interface for processors that need to render something to the screen.
  */
-interface RenderingProcessor: Processor {
+interface RenderingSystem: System {
 
     /**
      * Do any rendering to the screen.

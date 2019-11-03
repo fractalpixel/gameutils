@@ -2,7 +2,7 @@ package org.fractalpixel.gameutils.captionservice
 
 import com.badlogic.gdx.graphics.Color
 import org.entityflakes.World
-import org.entityflakes.processor.ProcessorBase
+import org.entityflakes.system.SystemBase
 import org.fractalpixel.gameutils.layer.layers.CenteredTextLayer
 import org.fractalpixel.gameutils.libgdxutils.FontInfo
 import org.fractalpixel.gameutils.scheduler.Scheduled
@@ -13,7 +13,7 @@ import org.kwrench.time.Time
 /**
  * Used for displaying large messages to the player.
  */
-class CaptionService: ProcessorBase() {
+class CaptionSystem: SystemBase() {
 
     var fadeInStartColor: Color = Color(0f, 0f, 0.5f, 0f)
     var fadeOutEndColor: Color = Color(0.5f, 0f, 0.0f, 0f)
@@ -54,11 +54,6 @@ class CaptionService: ProcessorBase() {
             textLayer.color.set(c1).lerp(c2, progress.toFloat())
         }, duration, CosineInterpolator())
     }
-
-    override fun update(time: Time) {
-        // Not used
-    }
-
 
 
 }

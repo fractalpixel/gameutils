@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
 import org.entityflakes.World
-import org.fractalpixel.gameutils.GameService
+import org.fractalpixel.gameutils.GameSystem
 import org.kwrench.strings.toSpaceSeparated
 import org.kwrench.strings.toSymbol
 import org.kwrench.symbol.Symbol
@@ -68,13 +68,13 @@ class MouseInputProvider : InputProviderBase() {
         registerMouseInputs()
 
         // Listen to inputs
-        world[GameService::class].addInputListener(mouseListener)
+        world[GameSystem::class].addInputListener(mouseListener)
     }
 
 
     override fun doDispose(world: World) {
         // Stop listening to inputs
-        world[GameService::class].removeInputListener(mouseListener)
+        world[GameSystem::class].removeInputListener(mouseListener)
     }
 
     private fun notifyListenersOfPosition(positionX: Symbol, positionY: Symbol,
