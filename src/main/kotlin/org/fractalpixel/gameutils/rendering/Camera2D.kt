@@ -27,13 +27,13 @@ class Camera2D(val worldFocus: MutableDouble3 = MutableDouble3(),
     val visibleWorldWidth: Double get() {
         return if (screenIsEmpty) 0.0
         else if (screenArea.w <= screenArea.h) visibleWorldDiameter
-        else visibleWorldDiameter * (screenArea.h / screenArea.w)
+        else visibleWorldDiameter * (screenArea.w / screenArea.h)
     }
 
     val visibleWorldHeight: Double get() {
         return if (screenIsEmpty) 0.0
         else if (screenArea.h <= screenArea.w) visibleWorldDiameter
-        else visibleWorldDiameter * (screenArea.w / screenArea.h)
+        else visibleWorldDiameter * (screenArea.h / screenArea.w)
     }
 
     fun getVisibleWorldArea(worldAreaOut: MutableRect = MutableRect()): MutableRect {
