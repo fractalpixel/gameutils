@@ -1,4 +1,4 @@
-package org.fractalpixel.gameutils.terrain.voxel.distancefunction
+package org.fractalpixel.gameutils.voxel.distancefunction
 
 import org.kwrench.geometry.double3.Double3
 import org.kwrench.math.clamp0To1
