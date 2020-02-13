@@ -2,6 +2,8 @@ package org.fractalpixel.gameutils.voxel.renderer
 
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Mesh
+import com.badlogic.gdx.graphics.VertexAttributes.Usage.Normal
+import com.badlogic.gdx.graphics.VertexAttributes.Usage.Position
 import com.badlogic.gdx.graphics.g3d.Material
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
@@ -24,20 +26,24 @@ class VoxelRendererLayer(val terrain: VoxelTerrain): Layer3D() {
 
     fun build() {
         // Create mesh
-        val a = shapeBuilder.addVertex(Vector3(0f, 0f, -10f))
-        val b = shapeBuilder.addVertex(Vector3(11f, 0f, -100f))
-        val c = shapeBuilder.addVertex(Vector3(11f, 11f, 10f))
-        val d = shapeBuilder.addVertex(Vector3(0f, 11f, 110f))
+        val a = shapeBuilder.addVertex(Vector3(0f, 0f, -1f))
+        val b = shapeBuilder.addVertex(Vector3(1f, 0f, -1f))
+        val c = shapeBuilder.addVertex(Vector3(1f, 1f, 1f))
+        val d = shapeBuilder.addVertex(Vector3(0f, 0f, 1f))
         shapeBuilder.addQuad(a, b, c, d, true)
         mesh = shapeBuilder.createMesh()
 
         // Create modelInstance
         val modelBuilder = ModelBuilder()
         val material = Material()
-        material.set(ColorAttribute.createDiffuse(0.5f, 0.6f, 0.55f, 1f))
+        material.set(ColorAttribute.createDiffuse(1f, 1f, 1f, 1f))
+        //val model =modelBuilder.createSphere(1f, 1f, 1f, 20, 20, material, Position.toLong() or Normal.toLong())
+
         modelBuilder.begin()
         modelBuilder.part("mesh", mesh, GL20.GL_TRIANGLES, material)
+
         val model = modelBuilder.end()
+
         modelInstance = ModelInstance(model)
     }
 

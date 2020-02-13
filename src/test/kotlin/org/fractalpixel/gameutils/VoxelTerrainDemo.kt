@@ -3,10 +3,16 @@ package org.fractalpixel.gameutils
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.PerspectiveCamera
 import com.badlogic.gdx.graphics.g3d.Environment
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
+import com.badlogic.gdx.graphics.g3d.environment.PointLight
 import com.badlogic.gdx.math.Vector3
 import org.entityflakes.World
+import org.fractalpixel.gameutils.camera.CameraSystem
+import org.fractalpixel.gameutils.captionservice.CaptionSystem
+import org.fractalpixel.gameutils.controls.InputControlSystem
 import org.fractalpixel.gameutils.rendering.DefaultRenderingContext3D
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
@@ -15,7 +21,10 @@ import org.fractalpixel.gameutils.voxel.distancefunction.NoiseFun
 import org.fractalpixel.gameutils.voxel.distancefunction.SphereFun
 import org.fractalpixel.gameutils.voxel.renderer.VoxelRendererLayer
 
+
 class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
+
+    lateinit var cameraSystem: CameraSystem
 
     val distanceFunction: DistanceFun = SphereFun(
         radius = 10.0
@@ -29,24 +38,38 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
     val terrain = VoxelTerrain(distanceFunction)
 
     override fun createProcessors(world: World) {
+        world.addSystem(CaptionSystem())
+        cameraSystem = world.addSystem(CameraSystem(PerspectiveCamera()))
+        world.addSystem(InputControlSystem())
+
+        cameraSystem.set(Vector3(0f, 5f, 10f), Vector3(0f,0f,0f))
     }
 
     override fun setupWorld(world: World) {
+        val voxelRendererLayer = VoxelRendererLayer(terrain)
+        voxelRendererLayer.context = createRenderingContext(world)
 
+        world.createEntity(voxelRendererLayer)
+    }
+
+    private fun createRenderingContext(world: World): RenderingContext3D {
         val renderingContext: RenderingContext3D = DefaultRenderingContext3D()
         renderingContext.init(world)
         val environment = Environment()
         renderingContext.environment = environment
         val light = DirectionalLight()
-        light.set(Color(0.998f, 0.817f, 0.75f, 1f), Vector3(0.62f, -0.5f, -0.1f))
+        light.set(Color(0.9f, 0.98f, 0.75f, 1f), Vector3(0.62f, -1.5f, 0.1f))
+        val light2 = DirectionalLight()
+        light2.set(Color(0.5f, 0.1f, 0.25f, 1f), Vector3(-0.3f, 0.03f, -0.1f))
         environment.add(light)
+        environment.add(light2)
+        environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.1f, 0.1f, 0.2f, 1f))
+        val pointLight = PointLight()
+        pointLight.intensity
+        //environment.add(pointLight)
 
-
-        val voxelRendererLayer = VoxelRendererLayer(terrain)
-        voxelRendererLayer.context = renderingContext
-
-
-        world.createEntity(voxelRendererLayer)
+        renderingContext.camera = cameraSystem.camera
+        return renderingContext
     }
 }
 
