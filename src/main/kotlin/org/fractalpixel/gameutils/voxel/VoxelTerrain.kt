@@ -7,7 +7,7 @@ import org.kwrench.geometry.double3.Double3
  * Holds data about a voxel terrain.
  */
 class VoxelTerrain(var distanceFun: DistanceFun,
-                   val voxelSize: Int = 4,
+                   val voxelSize: Int = 64,
                    val worldSize: Double = 30.0,
                    val worldCenter: Double3 = Double3.ZEROES) {
 
@@ -16,6 +16,14 @@ class VoxelTerrain(var distanceFun: DistanceFun,
 
     init {
         calculate()
+    }
+
+    inline fun getSample(x: Int, y: Int, z: Int): Double {
+        return distance[x + y * voxelSize + z * voxelSize * voxelSize]
+    }
+
+    inline fun getSample(index: Int): Double {
+        return distance[index]
     }
 
     /**

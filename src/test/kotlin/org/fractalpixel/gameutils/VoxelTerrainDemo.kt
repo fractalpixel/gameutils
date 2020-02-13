@@ -20,8 +20,11 @@ import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun
 import org.fractalpixel.gameutils.voxel.distancefunction.NoiseFun
 import org.fractalpixel.gameutils.voxel.distancefunction.SphereFun
 import org.fractalpixel.gameutils.voxel.renderer.VoxelRendererLayer
+import org.kwrench.math.Tau
+import java.lang.Math.cos
+import java.lang.Math.sin
 
-
+// TODO: Bit of a mess currently, clean up later.
 class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
     lateinit var cameraSystem: CameraSystem
@@ -30,10 +33,18 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         radius = 10.0
     ).add(
         NoiseFun(
-            scale = 1.0,
-            amplitude = 1.0
+            scale = 0.2,
+            amplitude = 3.0
         )
+    ).smoothIntersection(
+        NoiseFun(
+            scale = 0.25,
+            amplitude = 2.6,
+            offset = -0.5
+        ),
+        3.0
     )
+
 
     val terrain = VoxelTerrain(distanceFunction)
 
@@ -42,7 +53,18 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         cameraSystem = world.addSystem(CameraSystem(PerspectiveCamera()))
         world.addSystem(InputControlSystem())
 
-        cameraSystem.set(Vector3(0f, 5f, 10f), Vector3(0f,0f,0f))
+        val cameraPosition = Vector3(0f, 5f, 30f)
+        val lookAt = Vector3(0f, 0f, 0f)
+        cameraSystem.set(cameraPosition, lookAt)
+
+        // Rotate camera
+        val radius = 25f
+        val speed = 0.1f
+        world.addSystem { _, time ->
+            cameraPosition.x = (radius * -cos(speed * time.secondsSinceStart * Tau)).toFloat()
+            cameraPosition.z = (radius * sin(speed * time.secondsSinceStart * Tau)).toFloat()
+            cameraSystem.set(cameraPosition, lookAt)
+        }
     }
 
     override fun setupWorld(world: World) {
@@ -66,7 +88,6 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.1f, 0.1f, 0.2f, 1f))
         val pointLight = PointLight()
         pointLight.intensity
-        //environment.add(pointLight)
 
         renderingContext.camera = cameraSystem.camera
         return renderingContext

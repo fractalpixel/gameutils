@@ -58,7 +58,7 @@ class CameraSystem(val camera: Camera): SystemBase() {
     }
 
     fun set(cameraPosition: Vector3,
-            lookAt: Vector3,
+            lookAt: Vector3 = Vector3.Zero,
             up: Vector3 = Vector3.Y) {
         camera.position.set(cameraPosition)
         camera.lookAt(lookAt)
