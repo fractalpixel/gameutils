@@ -9,6 +9,7 @@ import org.kwrench.random.Rand
  */
 class NoisePerturbFun(var distanceFun: DistanceFun,
                       var noiseScale: Double3 = Double3.ONES,
+                      var noiseAmplitude: Double3 = Double3.ONES,
                       var noiseOffset: Double3 = Double3.ZEROES,
                       val seed: Long = Rand.default.nextLong()): DistanceFun {
 
@@ -17,9 +18,9 @@ class NoisePerturbFun(var distanceFun: DistanceFun,
     val noiseZ = OpenSimplexNoise(seed + 97)
 
     override fun invoke(x: Double, y: Double, z: Double): Double {
-        val xp = noiseX.noise(x, y, z) * noiseScale.x + noiseOffset.x
-        val yp = noiseY.noise(x, y, z) * noiseScale.y + noiseOffset.y
-        val zp = noiseZ.noise(x, y, z) * noiseScale.z + noiseOffset.z
+        val xp = x + noiseX.noise(x * noiseScale.x, y * noiseScale.y, z * noiseScale.z) * noiseAmplitude.x + noiseOffset.x
+        val yp = y + noiseY.noise(x * noiseScale.x, y * noiseScale.y, z * noiseScale.z) * noiseAmplitude.y + noiseOffset.y
+        val zp = z + noiseZ.noise(x * noiseScale.x, y * noiseScale.y, z * noiseScale.z) * noiseAmplitude.z + noiseOffset.z
         return distanceFun(xp, yp, zp)
     }
 }

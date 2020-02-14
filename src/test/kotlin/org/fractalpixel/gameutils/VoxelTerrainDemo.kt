@@ -18,8 +18,11 @@ import org.fractalpixel.gameutils.rendering.RenderingContext3D
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
 import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun
 import org.fractalpixel.gameutils.voxel.distancefunction.NoiseFun
+import org.fractalpixel.gameutils.voxel.distancefunction.NoisePerturbFun
 import org.fractalpixel.gameutils.voxel.distancefunction.SphereFun
 import org.fractalpixel.gameutils.voxel.renderer.VoxelRendererLayer
+import org.kwrench.geometry.double3.Double3
+import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.math.Tau
 import java.lang.Math.cos
 import java.lang.Math.sin
@@ -29,21 +32,27 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
     lateinit var cameraSystem: CameraSystem
 
-    val distanceFunction: DistanceFun = SphereFun(
-        radius = 10.0
+    val distanceFunction: DistanceFun = (SphereFun(
+        radius = 14.0
     ).add(
         NoiseFun(
-            scale = 0.2,
-            amplitude = 3.0
+            scale = 0.1,
+            amplitude = 3.2
         )
-    ).smoothIntersection(
+    ).smoothDifference(
         NoiseFun(
-            scale = 0.25,
+            scale = 0.3,
+            amplitude = 1.0
+        ),
+        1.1
+    )).smoothIntersection(
+        NoiseFun(
+            scale = 0.15,
             amplitude = 2.6,
             offset = -0.5
         ),
         3.0
-    )
+    ).perturb(MutableDouble3(0.2, 0.3, 0.2), MutableDouble3(2.0, 1.0, 2.0))
 
 
     val terrain = VoxelTerrain(distanceFunction)

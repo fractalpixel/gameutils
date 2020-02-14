@@ -61,7 +61,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
         CombineFun(
             this,
             other
-        ) { a, b -> max(-a, b) }
+        ) { a, b -> max(a, -b) }
 
     /**
      * Intersection of this and the other object,
@@ -89,7 +89,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
     fun smoothDifference(other: DistanceFun, smoothness: Double): DistanceFun =
         CombineFun(this, other) { a, b ->
             val h = (0.5 - 0.5 * (b + a) / smoothness).clamp0To1()
-            mix(h, b, -a) + smoothness * h * (1.0 - h)
+            mix(h, a, -b) + smoothness * h * (1.0 - h)
         }
 
     /**
@@ -102,5 +102,9 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
             mix(h, b, a) + smoothness * h * (1.0 - h)
         }
 
+    /**
+     * Transform coordinate space that this noise uses with a 3D noise function.
+     */
+    fun perturb(scale: Double3 = Double3.ONES, amplitude: Double3 = Double3.ONES, offset: Double3 = Double3.ZEROES): DistanceFun = NoisePerturbFun(this, scale, amplitude, offset)
 
 }
