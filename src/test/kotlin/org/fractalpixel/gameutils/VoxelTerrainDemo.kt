@@ -18,10 +18,8 @@ import org.fractalpixel.gameutils.rendering.RenderingContext3D
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
 import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun
 import org.fractalpixel.gameutils.voxel.distancefunction.NoiseFun
-import org.fractalpixel.gameutils.voxel.distancefunction.NoisePerturbFun
 import org.fractalpixel.gameutils.voxel.distancefunction.SphereFun
 import org.fractalpixel.gameutils.voxel.renderer.VoxelRendererLayer
-import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.math.Tau
 import java.lang.Math.cos
@@ -79,7 +77,6 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
     override fun setupWorld(world: World) {
         val voxelRendererLayer = VoxelRendererLayer(terrain)
         voxelRendererLayer.context = createRenderingContext(world)
-
         world.createEntity(voxelRendererLayer)
     }
 
