@@ -73,6 +73,7 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
         val indexStepDelta = ImmutableInt3(1, terrain.voxelSize-1, (terrain.voxelSize-1) * (terrain.voxelSize-1))
 
         // Iterate voxel space
+        // TODO: Use chunk coordinates / volume
         val worldStep = (terrain.worldSize / (terrain.voxelSize - 1)).toFloat()
         var xp: Float
         var yp: Float
