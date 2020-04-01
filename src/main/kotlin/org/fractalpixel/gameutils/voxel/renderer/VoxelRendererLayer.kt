@@ -1,22 +1,8 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
-import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.Mesh
-import com.badlogic.gdx.graphics.g3d.Material
-import com.badlogic.gdx.graphics.g3d.ModelInstance
-import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
-import com.badlogic.gdx.math.Vector3
 import org.fractalpixel.gameutils.layer.Layer3D
-import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
-import org.fractalpixel.gameutils.utils.getCoordinate
-import org.fractalpixel.gameutils.utils.setCoordinate
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
-import org.kwrench.geometry.int3.ImmutableInt3
-import org.kwrench.geometry.int3.Int3
-import org.kwrench.geometry.int3.MutableInt3
-import kotlin.math.abs
 
 
 /**
@@ -34,14 +20,14 @@ import kotlin.math.abs
 // TODO: Add materials & texturing (blend between 3 most present materials or similar - keep track of material amounts
 //       in small integer values (grams / milliliters)? -> no risk of creating / destroying matter)
 class VoxelRendererLayer(val terrain: VoxelTerrain,
-                         val smallestDetailLevel: Int = -2,
-                         val detailLevelCount: Int = 12): Layer3D() {
+                         val voxelConfiguration: VoxelConfiguration = VoxelConfiguration()
+): Layer3D() {
 
     private val detailLevels = ArrayList<VoxelDetailLevel>()
 
     init {
-        for (level in smallestDetailLevel until smallestDetailLevel + detailLevelCount) {
-            detailLevels.add(VoxelDetailLevel(terrain, level))
+        for (level in voxelConfiguration.detailLevelsRange) {
+            detailLevels.add(VoxelDetailLevel(terrain, level, voxelConfiguration))
         }
     }
 

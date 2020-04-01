@@ -15,12 +15,12 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
     /**
      * Returns distance to the surface from the specified point, negative if the point is inside the object.
      */
-    operator fun get(pos: Double3): Double = invoke(pos.z, pos.y, pos.z)
+    operator fun get(pos: Double3): Double = invoke(pos.x, pos.y, pos.z)
 
     /**
      * Returns distance to the surface from the specified point, negative if the point is inside the object.
      */
-    override fun invoke(pos: Double3): Double  = invoke(pos.z, pos.y, pos.z)
+    override fun invoke(pos: Double3): Double  = invoke(pos.x, pos.y, pos.z)
 
     /**
      * Returns distance to the surface from the specified point, negative if the point is inside the object.

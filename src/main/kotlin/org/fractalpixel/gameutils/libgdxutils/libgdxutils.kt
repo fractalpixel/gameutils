@@ -308,6 +308,18 @@ inline fun MutableInt3.setWithFloor(v: Vector3): MutableInt3 {
 }
 
 /**
+ * Set this vector to the value of the input vector multiplied with the specified scalar and with the
+ * offset added to all components, and return this vector.
+ * Rounds down to nearest integer after the multiplication (uses floor).
+ */
+inline fun MutableInt3.setWithScaleAddAndFloor(v: Vector3, scale: Float = 1f, offset: Float = 0f): MutableInt3 {
+    x = (scale * v.x + offset).fastFloor()
+    y = (scale * v.y + offset).fastFloor()
+    z = (scale * v.z + offset).fastFloor()
+    return this
+}
+
+/**
  * Set this vector to the value of the input vector, and return this vector.
  * Rounds to closest integer (uses round).
  */
@@ -315,6 +327,18 @@ inline fun MutableInt3.setWithRound(v: Vector3): MutableInt3 {
     x = v.x.round()
     y = v.y.round()
     z = v.z.round()
+    return this
+}
+
+/**
+ * Set this vector to the value of the input vector multiplied with the specified scalar and with the offset added
+ * to all components, and return this vector.
+ * Rounds to closest integer after multiplication (uses round).
+ */
+inline fun MutableInt3.setWithScaleAddAndRound(v: Vector3, scale: Float = 1f, offset: Float = 0f): MutableInt3 {
+    x = (scale * v.x + offset).round()
+    y = (scale * v.y + offset).round()
+    z = (scale * v.z + offset).round()
     return this
 }
 
