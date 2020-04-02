@@ -82,7 +82,7 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
      * Update mesh based on latest terrain distance function.
      */
     fun update() {
-        // TODO
+        // TODO: Update mesh of world edited
     }
 
     fun dispose() {
