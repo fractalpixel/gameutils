@@ -2,10 +2,16 @@ package org.fractalpixel.gameutils.libgdxutils
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.VertexAttributes
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.badlogic.gdx.graphics.g3d.Material
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
+import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.math.Matrix4
 import com.badlogic.gdx.math.Quaternion
 import com.badlogic.gdx.math.Vector2
@@ -425,5 +431,48 @@ fun SpriteBatch.draw(region: TextureRegion,
     this.color = oldColor
 }
 
+/**
+ * Creates a wireframe axis-aligned box for debugging purposes.
+ */
+fun ModelBuilder.buildWireframeBoxPart(position: Vector3,
+                                       sizeX : Float,
+                                       sizeY: Float = sizeX,
+                                       sizeZ: Float = sizeX,
+                                       color: Color = Color(0.1f, 0.5f, 0.1f, 1f),
+                                       center: Boolean = false,
+                                       doBeginEnd: Boolean = false) {
+    if (doBeginEnd) begin()
 
+    // Material
+    val wireframeMaterial = Material()
+    wireframeMaterial.set(ColorAttribute.createDiffuse(color))
 
+    // Part builder
+    val gridBuilder: MeshPartBuilder = part("wireframe", GL20.GL_LINES, VertexAttributes.Usage.Position.toLong(), wireframeMaterial)
+
+    // Corner vertexes
+    val corner = if (center) position.cpy().sub(sizeX/2, sizeY/2, sizeZ/2) else position
+    val vx = corner.cpy().add(sizeX, 0f, 0f)
+    val vy = corner.cpy().add(0f, sizeY, 0f)
+    val vz = corner.cpy().add(0f, 0f, sizeZ)
+    val vxy = corner.cpy().add(sizeX, sizeY, 0f)
+    val vyz = corner.cpy().add(0f, sizeY, sizeZ)
+    val vxz = corner.cpy().add(sizeX, 0f, sizeZ)
+    val vxyz = corner.cpy().add(sizeX, sizeY, sizeZ)
+
+    // Lines
+    gridBuilder.line(corner, vx)
+    gridBuilder.line(corner, vy)
+    gridBuilder.line(corner, vz)
+    gridBuilder.line(vx, vxy)
+    gridBuilder.line(vx, vxz)
+    gridBuilder.line(vy, vxy)
+    gridBuilder.line(vy, vyz)
+    gridBuilder.line(vz, vxz)
+    gridBuilder.line(vz, vyz)
+    gridBuilder.line(vxy, vxyz)
+    gridBuilder.line(vyz, vxyz)
+    gridBuilder.line(vxz, vxyz)
+
+    if (doBeginEnd) end()
+}

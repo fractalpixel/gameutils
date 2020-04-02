@@ -22,13 +22,16 @@ import kotlin.math.pow
  */
 data class VoxelConfiguration(
     val detailLevelCount: Int = 1,
-    val mostDetailedDetailLevel: Int = 1,
+    val mostDetailedDetailLevel: Int = -2,
     val chunkSize: Int = 16,
-    val levelSize: Int = 2) {
+    val levelSize: Int = 6,
+    val baseDetailLevelBlockSizeMeters: Double = 1.0,
+    val debugLines: Boolean = true) {
 
 
-    // The block corners in a chunk, so one more than blocks in each direction.
-    val chunkCornersSize = chunkSize + 1
+    // The block corners in a chunk, so one more than blocks in each direction and one extra overlap covering/overlapping gaps.
+    val overlap = 1 // Can be 0 (cracks), 1 (overlap in negative direction), or 2 (overlap in both directions).
+    val chunkCornersSize = chunkSize + 1 + overlap
     val blockCornerCountInChunk = chunkCornersSize * chunkCornersSize * chunkCornersSize
 
     val blockCountInChunk: Int = chunkSize * chunkSize * chunkSize
@@ -69,7 +72,7 @@ data class VoxelConfiguration(
     inline fun blockArrayIndex(localBlockPos: Int3): Int = localBlockPos.toIndex(chunkExtent) ?: throw IllegalArgumentException("Block pos out of local range $localBlockPos")
 
     fun getChunkForPosition(pos: Vector3, level: Int, chunkPosOut: MutableInt3 = MutableInt3()): MutableInt3 {
-        return chunkPosOut.setWithScaleAddAndFloor(pos, 1f / chunkWorldSize(level).toFloat(), -chunkSize * 0.5f)
+        return chunkPosOut.setWithScaleAddAndFloor(pos, 1f / chunkWorldSize(level).toFloat())
     }
 
     /**
@@ -81,8 +84,7 @@ data class VoxelConfiguration(
         getChunkForPosition(focus, level, cornerChunkOut)
 
         // Get corner chunk
-        val halfLevelSize = levelSize / 2
-        cornerChunkOut.sub(halfLevelSize)
+        cornerChunkOut.sub(levelSize / 2)
 
         // Align to even chunk coordinates.
         cornerChunkOut.divide(2).scale(2)
@@ -95,7 +97,4 @@ data class VoxelConfiguration(
      */
     val detailLevelsRange get() = mostDetailedDetailLevel until (mostDetailedDetailLevel + detailLevelCount)
 
-    companion object {
-        const val baseDetailLevelBlockSizeMeters: Double = 1.0
-    }
 }

@@ -1,6 +1,8 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
+import org.fractalpixel.gameutils.utils.normalize
 import org.kwrench.geometry.double3.Double3
+import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.math.clamp0To1
 import org.kwrench.math.mix
 import kotlin.math.max
@@ -107,4 +109,26 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      */
     fun perturb(scale: Double3 = Double3.ONES, amplitude: Double3 = Double3.ONES, offset: Double3 = Double3.ZEROES): DistanceFun = NoisePerturbFun(this, scale, amplitude, offset)
 
+
+    /**
+     * Calculate normal at the specified [pos].
+     * Use the specified [samplingScale] for the normal calculation, normally the positions around the point are sampled
+     * at the specified [samplingScale] in each direction to determine the normal, but implementations may also use
+     * other methods.
+     * The normal is stored in [normalOut], and it is returned.
+     */
+    fun getNormal(pos: Double3, samplingScale: Double, normalOut: MutableDouble3 = MutableDouble3()): MutableDouble3 {
+        // Use normalOut as temporary sampling position, so that we do not need to create a new Double3 instance
+        val mx = get(normalOut.set(pos).add(-samplingScale, 0.0, 0.0))
+        val px = get(normalOut.set(pos).add(+samplingScale, 0.0, 0.0))
+        val my = get(normalOut.set(pos).add(0.0, -samplingScale, 0.0))
+        val py = get(normalOut.set(pos).add(0.0, +samplingScale, 0.0))
+        val mz = get(normalOut.set(pos).add(0.0, 0.0, -samplingScale))
+        val pz = get(normalOut.set(pos).add(0.0, 0.0, +samplingScale))
+
+        // Calculate normal by comparing samples on both sides of the position along each axis, and normalizing the result
+        normalOut.set(px-mx, py-my, pz-mz).normalize()
+
+        return normalOut
+    }
 }

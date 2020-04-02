@@ -2,6 +2,7 @@ package org.fractalpixel.gameutils.utils
 
 import com.badlogic.gdx.math.Vector3
 import org.kwrench.geometry.double3.Double3
+import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
 import java.lang.IllegalArgumentException
@@ -13,6 +14,17 @@ fun Double3.distanceTo(x: Double, y: Double, z: Double): Double {
     val dy = y - this.y
     val dz = z - this.z
     return sqrt(dx*dx + dy*dy + dz*dz)
+}
+
+fun MutableDouble3.normalize(): MutableDouble3 {
+    val len = this.length()
+    if (len <= 0.0) {
+        this.y = 1.0
+    }
+    else {
+        this.divide(len)
+    }
+    return this
 }
 
 

@@ -44,7 +44,10 @@ class VoxelDetailLevel(val terrain: VoxelTerrain,
     }
 
     fun render(context: RenderingContext3D) {
-        updateCameraPos(context.camera.position)
+        // TODO: Uncomment later to focus on camera
+        //updateCameraPos(context.camera.position)
+        // Focus center:
+        updateCameraPos(Vector3.Zero)
 
         for (chunk in chunks) {
             chunk?.render(context)

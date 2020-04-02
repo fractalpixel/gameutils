@@ -8,18 +8,15 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.math.Vector3
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
+import org.fractalpixel.gameutils.libgdxutils.buildWireframeBoxPart
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
 import org.fractalpixel.gameutils.utils.getCoordinate
 import org.fractalpixel.gameutils.utils.setCoordinate
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
-import org.fractalpixel.gameutils.voxel.distancefunction.SphereFun
-import org.kwrench.geometry.double3.Double3
-import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
 import org.kwrench.properties.threadLocal
-import kotlin.concurrent.thread
 import kotlin.math.abs
 
 /**
@@ -51,7 +48,6 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
      * Create the chunk model based on the terrain distance function and the location of this chunk.
      */
     fun build() {
-        println("Started building chunk $pos at level $level")
         // Create mesh
         mesh = createMesh()
 
@@ -63,10 +59,16 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
         modelBuilder.begin()
         modelBuilder.part("mesh", mesh, GL20.GL_TRIANGLES, material)
 
+        // Add debug wireframe if requested
+        if (configuration.debugLines) {
+            val corner = configuration.chunkWorldCornerPos(pos, level)
+            val sideLen = configuration.chunkWorldSize(level).toFloat()
+            modelBuilder.buildWireframeBoxPart(corner, sideLen)
+        }
+
         val model = modelBuilder.end()
 
         modelInstance = ModelInstance(model)
-        println("Completed chunk $pos at level $level")
     }
 
     /**
@@ -80,7 +82,9 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
     private fun createMesh(): Mesh {
         val shapeBuilder = shapeBuilder.get()
 
-        val indexStepDelta = ImmutableInt3(1, configuration.chunkSize-1, (configuration.chunkSize-1) * (configuration.chunkSize-1))
+        val sideCellCount = configuration.chunkCornersSize - 1
+
+        val indexStepDelta = ImmutableInt3(1, sideCellCount, (sideCellCount) * (sideCellCount))
 
         // Calculate distance values over the chunk
         val distanceCache = CachedDistances(terrain.distanceFun, configuration) // TODO: Reuse the cache in this local thread!
@@ -89,24 +93,25 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
         // Iterate voxel space
         val chunkWorldCorner = configuration.chunkWorldCornerPos(pos, level)
         val chunkWorldSize = configuration.chunkWorldSize(level)
-        val worldStep = (chunkWorldSize / (configuration.chunkSize - 1)).toFloat()
+        val worldStep = configuration.blockWorldSize(level).toFloat()
         var xp: Float
         var yp: Float
         var index = 0
         val voxelPos = MutableInt3()
         val tempVec = Vector3() // Create these temporary values outside the loop to avoid memory trashing
         val tempPos = Vector3()
-
-        var zp: Float = chunkWorldCorner.z
-        for (z in 0 until configuration.chunkSize-1) {
-            yp = chunkWorldCorner.y
-            for (y in 0 until configuration.chunkSize-1) {
-                xp = chunkWorldCorner.x
-                for (x in 0 until configuration.chunkSize-1) {
-                    val d = distanceCache.getSample(index++)
+        val tempNormal = Vector3()
+        var zp: Float = chunkWorldCorner.z - worldStep
+        for (z in 0 until sideCellCount) {
+            yp = chunkWorldCorner.y - worldStep
+            for (y in 0 until sideCellCount) {
+                xp = chunkWorldCorner.x - worldStep
+                for (x in 0 until sideCellCount) {
 
                     voxelPos.set(x, y, z)
-                    calculateVertexPosition(distanceCache, index, voxelPos, xp, yp, zp, worldStep, indexStepDelta, shapeBuilder, tempVec, tempPos)
+                    calculateVertexPosition(distanceCache, index, voxelPos, xp, yp, zp, worldStep, indexStepDelta, shapeBuilder, tempVec, tempPos, tempNormal)
+
+                    index++
 
                     xp += worldStep
                 }
@@ -130,14 +135,13 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
         indexStepDelta: Int3,
         shapeBuilder: ShapeBuilder,
         tempVec: Vector3,
-        tempPos: Vector3
+        tempPos: Vector3,
+        tempNormal: Vector3
     ) {
         // Read depth field information at voxel corners, construct a mask on whether the corner is inside or outside the shape
-        // TODO: This could be cached to reduce terrain depth calculations by 80-85%
         var cornerMask = 0
         var g = 0
 
-        val voxelOffsetX = pos.x * configuration.chunkSize
         for (cz in 0 .. 1) {
             for (cy in 0 .. 1) {
                 for (cx in 0 .. 1) {
@@ -199,15 +203,18 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
             }
         }
 
-        //Now we just average the edge intersections and add them to coordinate
+        // Now we just average the edge intersections and add them to coordinate
         val s = 1f / edgeCrossings
         tempVec.x = xp + s * step * tempVec.x
         tempVec.y = yp + s * step * tempVec.y
         tempVec.z = zp + s * step * tempVec.z
         tempPos.set(tempVec)
 
+        // Determine normal
+        distanceCache.getNormal(tempPos, tempNormal)
+
         // Create vertex for mesh
-        val vertexIndex = shapeBuilder.addVertex(tempPos)
+        val vertexIndex = shapeBuilder.addVertex(tempPos, tempNormal)
 
         // Store vertex index
         voxelVertexIndexes[index] = vertexIndex
@@ -235,14 +242,16 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
                     voxelVertexIndexes[index],
                     voxelVertexIndexes[index -du],
                     voxelVertexIndexes[index -du -dv],
-                    voxelVertexIndexes[index -dv]
+                    voxelVertexIndexes[index -dv],
+                    updateNormals = false
                 )
             } else {
                 shapeBuilder.addQuad(
                     voxelVertexIndexes[index],
                     voxelVertexIndexes[index -dv],
                     voxelVertexIndexes[index -du -dv],
-                    voxelVertexIndexes[index -du]
+                    voxelVertexIndexes[index -du],
+                    updateNormals = false
                 )
             }
         }
