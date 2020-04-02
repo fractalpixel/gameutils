@@ -3,8 +3,10 @@ package org.fractalpixel.gameutils.utils
 import com.badlogic.gdx.math.Vector3
 import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.double3.MutableDouble3
+import org.kwrench.geometry.int2.Int2
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
+import org.kwrench.math.modPositive
 import java.lang.IllegalArgumentException
 import kotlin.math.sqrt
 
@@ -39,6 +41,16 @@ fun Int3.getCoordinate(coordinateIndex: Int): Int {
         else -> throw IllegalArgumentException("Coordinate index $coordinateIndex is out of range, expected 0 (x), 1 (y) or 2 (z)")
     }
 }
+
+/**
+ * True if all coordinates are zero.
+ */
+fun Int3.isAllZeroes(): Boolean = x == 0 && y == 0 && z == 0
+
+/**
+ * True if all coordinates are zero.
+ */
+fun Int2.isAllZeroes(): Boolean = x == 0 && y == 0
 
 /**
  * Add the specified values for each coordinate axis.
@@ -80,6 +92,17 @@ fun MutableInt3.sub(value: Int): MutableInt3 {
     this.z -= value
     return this
 }
+
+/**
+ * Wrap this value to the range 0,0,0 .. bounds by applying a mod function.
+ * If the result would be negative, the bounds are added to it.
+ */
+fun MutableInt3.modPositive(bounds: Int3) {
+    this.x = this.x.modPositive(bounds.x)
+    this.y = this.y.modPositive(bounds.y)
+    this.z = this.z.modPositive(bounds.z)
+}
+
 
 /**
  * Set x if [coordinateIndex] is 0, y if 1 and z if 2.  Throws exception otherwise.

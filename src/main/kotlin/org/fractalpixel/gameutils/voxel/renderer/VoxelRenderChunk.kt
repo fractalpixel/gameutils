@@ -1,5 +1,6 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Mesh
 import com.badlogic.gdx.graphics.g3d.Material
@@ -22,6 +23,8 @@ import kotlin.math.abs
 /**
  * Holds rendering data for a voxel chunk.
  */
+// TODO: Pool chunks, also, remember to dispose models of deleted chunks
+// TODO: Reuse models, allocate some extra vertexes, if they are not enough re-allocate it.
 class VoxelRenderChunk(val terrain: VoxelTerrain,
                        val level: Int,
                        initialPos: Int3,
@@ -62,8 +65,12 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
         // Add debug wireframe if requested
         if (configuration.debugLines) {
             val corner = configuration.chunkWorldCornerPos(pos, level)
-            val sideLen = configuration.chunkWorldSize(level).toFloat()
-            modelBuilder.buildWireframeBoxPart(corner, sideLen)
+            var sideLen = configuration.chunkWorldSize(level).toFloat()
+            modelBuilder.buildWireframeBoxPart(corner, sideLen, color = configuration.blockEdgeDebugLineColor)
+
+            corner.add(configuration.blockTypeDebugLineSpacing * sideLen)
+            sideLen *= (1f - 2f * configuration.blockTypeDebugLineSpacing)
+            modelBuilder.buildWireframeBoxPart(corner, sideLen, color = configuration.calculateBlockLevelDebugColor(level))
         }
 
         val model = modelBuilder.end()
@@ -78,6 +85,9 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
         // TODO
     }
 
+    fun dispose() {
+        modelInstance?.model?.dispose()
+    }
 
     private fun createMesh(): Mesh {
         val shapeBuilder = shapeBuilder.get()

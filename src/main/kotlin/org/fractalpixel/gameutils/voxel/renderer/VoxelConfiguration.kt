@@ -1,12 +1,20 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.Vector3
+import org.fractalpixel.gameutils.libgdxutils.GdxColorType
 import org.fractalpixel.gameutils.libgdxutils.setWithScaleAddAndFloor
 import org.fractalpixel.gameutils.utils.iterate
 import org.fractalpixel.gameutils.utils.sub
+import org.kwrench.color.GenColor
+import org.kwrench.color.colorspace.HSLColorSpace
+import org.kwrench.color.colorspace.HSLuvColorSpace
+import org.kwrench.color.colorspace.RGBColorSpace
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
+import org.kwrench.math.map
+import org.kwrench.math.mix
 import java.lang.IllegalArgumentException
 import kotlin.math.pow
 
@@ -22,9 +30,9 @@ import kotlin.math.pow
  */
 data class VoxelConfiguration(
     val detailLevelCount: Int = 1,
-    val mostDetailedDetailLevel: Int = -2,
-    val chunkSize: Int = 16,
-    val levelSize: Int = 6,
+    val mostDetailedDetailLevel: Int = -1,
+    val chunkSize: Int = 8,
+    val levelSize: Int = 8,
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
     val debugLines: Boolean = true) {
 
@@ -87,7 +95,8 @@ data class VoxelConfiguration(
         cornerChunkOut.sub(levelSize / 2)
 
         // Align to even chunk coordinates.
-        cornerChunkOut.divide(2).scale(2)
+        // TODO: Align
+//        cornerChunkOut.divide(2).scale(2)
         return cornerChunkOut
     }
 
@@ -96,5 +105,19 @@ data class VoxelConfiguration(
      * and ending with the most coarse (largest blocks) detail level.
      */
     val detailLevelsRange get() = mostDetailedDetailLevel until (mostDetailedDetailLevel + detailLevelCount)
+
+    fun relativeLevel(level: Int): Double = map(
+        level.toDouble(),
+        mostDetailedDetailLevel.toDouble(),
+        (mostDetailedDetailLevel + detailLevelCount - 1).toDouble(),
+        0.0, 1.0)
+
+    val blockTypeDebugLineSpacing = 0.03f
+    val blockEdgeDebugLineColor = Color(0.35f, 0.35f, 0.35f, 0.5f)
+    fun calculateBlockLevelDebugColor(level: Int): Color {
+        val hue = mix(relativeLevel(level), 0.15, 0.7)
+        return GenColor(hue, 0.7, 0.3, 1.0, HSLColorSpace).toColor(GdxColorType)
+    }
+
 
 }
