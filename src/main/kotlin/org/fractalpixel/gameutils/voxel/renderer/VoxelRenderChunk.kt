@@ -25,6 +25,7 @@ import kotlin.math.abs
  */
 // TODO: Pool chunks, also, remember to dispose models of deleted chunks
 // TODO: Reuse models, allocate some extra vertexes, if they are not enough re-allocate it.
+// TODO: If chunk is just air or solid, do not update/create a model for it and do not render it?
 class VoxelRenderChunk(val terrain: VoxelTerrain,
                        val level: Int,
                        initialPos: Int3,
