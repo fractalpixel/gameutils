@@ -2,6 +2,7 @@ package org.fractalpixel.gameutils.voxel.renderer
 
 import org.fractalpixel.gameutils.layer.Layer3D
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
+import org.fractalpixel.gameutils.utils.RecyclingPool
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
 
 
@@ -25,9 +26,13 @@ class VoxelRendererLayer(val terrain: VoxelTerrain,
 
     private val detailLevels = ArrayList<VoxelDetailLevel>()
 
+    private val chunkPool = RecyclingPool(
+        VoxelRenderChunk::class,
+        createInstance = {VoxelRenderChunk(voxelConfiguration)})
+
     init {
         for (level in voxelConfiguration.detailLevelsRange) {
-            detailLevels.add(VoxelDetailLevel(terrain, level, voxelConfiguration))
+            detailLevels.add(VoxelDetailLevel(terrain, level, voxelConfiguration, chunkPool))
         }
     }
 

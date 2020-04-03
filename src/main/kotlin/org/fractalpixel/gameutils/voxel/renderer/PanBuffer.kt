@@ -14,7 +14,7 @@ import java.lang.IllegalStateException
 /**
  * Buffer that holds values for some area of [initialSize] (not changeable) in 3D integer space, and that keeps the existing values
  * when it moves as long as they are still within it's range.
- * When new values scroll in, the [calculator] is used to calculate them.
+ * When new values scroll in, the [calculator] is used to calculate them, and when they scroll out, the [disposer] is called on them.
  * It is given the (global) position for the new value and should return the new value.
  * The area starts out at [initialPosition] and can be moved with [setPosition] or [offset].
  * [cornerPosition] contains the current position of the area (the area extends from the position towards positive

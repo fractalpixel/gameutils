@@ -1,6 +1,5 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
-import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Mesh
 import com.badlogic.gdx.graphics.g3d.Material
@@ -11,9 +10,11 @@ import com.badlogic.gdx.math.Vector3
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
 import org.fractalpixel.gameutils.libgdxutils.buildWireframeBoxPart
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
+import org.fractalpixel.gameutils.utils.Recyclable
 import org.fractalpixel.gameutils.utils.getCoordinate
 import org.fractalpixel.gameutils.utils.setCoordinate
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
+import org.fractalpixel.gameutils.voxel.distancefunction.ConstantFun
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
@@ -26,17 +27,30 @@ import kotlin.math.abs
 // TODO: Pool chunks, also, remember to dispose models of deleted chunks
 // TODO: Reuse models, allocate some extra vertexes, if they are not enough re-allocate it.
 // TODO: If chunk is just air or solid, do not update/create a model for it and do not render it?
-class VoxelRenderChunk(val terrain: VoxelTerrain,
-                       val level: Int,
-                       initialPos: Int3,
-                       val configuration: VoxelConfiguration) {
+// TODO: Meshcalculator classes, with data arrays used during calculation but not later, put in pool and give each thread/worker one
+class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
-    val pos = ImmutableInt3(initialPos) // Take a copy of the position, as the one passed as a parameter may change
+    private val pos = MutableInt3()
+    val position: Int3 get() = pos // Do not allow editing
+
+    var terrain: VoxelTerrain = emptyTerrain
+        private set
+
+    var level: Int = 0
+        private set
 
     private var mesh: Mesh? = null
     private var modelInstance: ModelInstance? = null
-    private val voxelVertexIndexes = ShortArray(configuration.blockCornerCountInChunk) {-1}
+    private val voxelVertexIndexes = ShortArray(configuration.blockCornerCountInChunk) {-1} // TODO: These could be pooled too, only needed when calculating mesh
 
+
+    fun init(terrain: VoxelTerrain,
+             level: Int,
+             pos: Int3) {
+        this.terrain = terrain
+        this.level = level
+        this.pos.set(pos)
+    }
 
     fun render(context: RenderingContext3D) {
         if (modelInstance == null) build()
@@ -86,8 +100,19 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
         // TODO: Update mesh of world edited
     }
 
-    fun dispose() {
+    override fun reset() {
+        terrain = emptyTerrain
+        level = 0
+        pos.zero()
+
+        // TODO: Re-use model mesh too if it would fit the structure..
         modelInstance?.model?.dispose()
+        modelInstance = null
+        mesh = null
+    }
+
+    override fun dispose() {
+        reset()
     }
 
     private fun createMesh(): Mesh {
@@ -278,6 +303,7 @@ class VoxelRenderChunk(val terrain: VoxelTerrain,
         private val voxelCornerDepths = DoubleArray(8)
         private val voxelCornerPositions = Array<Vector3>(8) { Vector3() }
 
+        private val emptyTerrain = VoxelTerrain(ConstantFun(1.0))
 
 
         init {
