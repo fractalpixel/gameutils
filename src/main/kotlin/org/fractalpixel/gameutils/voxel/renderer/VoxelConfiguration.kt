@@ -13,6 +13,7 @@ import org.kwrench.color.colorspace.RGBColorSpace
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
+import org.kwrench.geometry.volume.MutableVolume
 import org.kwrench.math.map
 import org.kwrench.math.mix
 import java.lang.IllegalArgumentException
@@ -32,7 +33,7 @@ data class VoxelConfiguration(
     val detailLevelCount: Int = 1,
     val mostDetailedDetailLevel: Int = -1,
     val chunkSize: Int = 8,
-    val levelSize: Int = 16,
+    val levelSize: Int = 12,
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
     val debugLines: Boolean = true) {
 
@@ -58,6 +59,29 @@ data class VoxelConfiguration(
         posOut.y = chunkPos.y * chunkWorldSize
         posOut.z = chunkPos.z * chunkWorldSize
         return posOut
+    }
+
+    /**
+     * Returns the volume for the specified chunk.
+     */
+    fun getChunkVolume(chunkPos: Int3, level: Int, volumeOut: MutableVolume = MutableVolume()): MutableVolume {
+        val chunkWorldSize = chunkWorldSize(level)
+
+        // First corner
+        val x1 = chunkPos.x * chunkWorldSize
+        val y1 = chunkPos.y * chunkWorldSize
+        val z1 = chunkPos.z * chunkWorldSize
+
+        // Extend from corner
+        volumeOut.set(
+            x1,
+            y1,
+            z1,
+            x1 + chunkWorldSize,
+            y1 + chunkWorldSize,
+            z1 + chunkWorldSize)
+
+        return volumeOut
     }
 
     inline fun iterateLevel(cornerChunkPos: Int3, iteratingInt3: MutableInt3 = MutableInt3(), code: (chunkPos: Int3, chunkIndex: Int) -> Unit) {
@@ -112,11 +136,11 @@ data class VoxelConfiguration(
         (mostDetailedDetailLevel + detailLevelCount - 1).toDouble(),
         0.0, 1.0)
 
-    val blockTypeDebugLineSpacing = 0.03f
+    val blockTypeDebugLineSpacing = 0.005f
     val blockEdgeDebugLineColor = Color(0.35f, 0.35f, 0.35f, 0.5f)
-    fun calculateBlockLevelDebugColor(level: Int): Color {
+    fun calculateBlockLevelDebugColor(level: Int, mayContainSurface: Boolean, hasMesh: Boolean): Color {
         val hue = mix(relativeLevel(level), 0.15, 0.7)
-        return GenColor(hue, 0.7, 0.3, 1.0, HSLColorSpace).toColor(GdxColorType)
+        return GenColor(hue, if (mayContainSurface) 0.9 else 0.25, if (hasMesh) 0.8 else if (mayContainSurface) 0.3 else 0.1, 1.0, HSLColorSpace).toColor(GdxColorType)
     }
 
 

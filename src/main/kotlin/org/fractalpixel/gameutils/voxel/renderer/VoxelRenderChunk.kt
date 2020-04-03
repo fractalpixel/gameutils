@@ -25,8 +25,6 @@ import kotlin.math.abs
  * Holds rendering data for a voxel chunk.
  */
 // TODO: Reuse models, allocate some extra vertexes, if they are not enough re-allocate it.
-// TODO: If chunk is just air or solid, do not update/create a model for it and do not render it?
-// TODO: Meshcalculator classes, with data arrays used during calculation but not later, put in pool and give each thread/worker one
 class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
     private val pos = MutableInt3()
@@ -78,7 +76,10 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
             corner.add(configuration.blockTypeDebugLineSpacing * sideLen)
             sideLen *= (1f - 2f * configuration.blockTypeDebugLineSpacing)
-            modelBuilder.buildWireframeBoxPart(corner, sideLen, color = configuration.calculateBlockLevelDebugColor(level))
+
+            // Debug visualize this:  TODO: Remove
+            val mayContainSurface = terrain.distanceFun.mayContainSurface(configuration.getChunkVolume(pos, level))
+            modelBuilder.buildWireframeBoxPart(corner, sideLen, color = configuration.calculateBlockLevelDebugColor(level, mayContainSurface, mesh != null))
         }
 
         val model = modelBuilder.end()

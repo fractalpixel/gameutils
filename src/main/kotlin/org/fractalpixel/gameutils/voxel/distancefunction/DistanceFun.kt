@@ -1,8 +1,10 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
 import org.fractalpixel.gameutils.utils.normalize
+import org.fractalpixel.gameutils.voxel.distancefunction.MinMaxSampler.*
 import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.double3.MutableDouble3
+import org.kwrench.geometry.volume.Volume
 import org.kwrench.math.clamp0To1
 import org.kwrench.math.mix
 import kotlin.math.max
@@ -30,6 +32,30 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
     override fun invoke(x: Double, y: Double, z: Double): Double
 
     /**
+     * Returns a minimum value for the specified volume.  No value in the volume retrieved with [get] should be smaller than
+     * the returned value.  If a minimum can not be determined, return Double.NEGATIVE_INFINITY.
+     */
+    fun getMin(volume: Volume): Double
+
+    /**
+     * Returns a maximum value for the specified volume.  No value in the volume retrieved with [get] should be larger than
+     * the returned value.  If a maximum can not be determined, return Double.POSITIVE_INFINITY.
+     */
+    fun getMax(volume: Volume): Double
+
+    /**
+     * Returns true if the specified volume may contain a surface (intersection of 0 level in the distance function).
+     * If false, it will not contain a surface (it will be either completely inside or outside a surface).
+     * If true, it may, but does not necessarily contain, a surface.
+     * Uses min & max bounds for the volume for a quick check to speed up calculations or collision detection.
+     *
+     */
+    fun mayContainSurface(volume: Volume): Boolean {
+        return getMin(volume) <= 0.0 &&
+               getMax(volume) >= 0.0
+    }
+
+    /**
      * Returns distance function that is this function added to the other function.
      */
     fun add(other: DistanceFun): DistanceFun =
@@ -44,7 +70,9 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
     fun subtract(other: DistanceFun): DistanceFun =
         CombineFun(
             this,
-            other
+            other,
+            MINIMUM, MAXIMUM,
+            MAXIMUM, MINIMUM
         ) { a, b -> a - b }
 
     /**
@@ -62,7 +90,9 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
     fun difference(other: DistanceFun): DistanceFun =
         CombineFun(
             this,
-            other
+            other,
+            MINIMUM, MAXIMUM,
+            MAXIMUM, MINIMUM
         ) { a, b -> max(a, -b) }
 
     /**
@@ -89,7 +119,9 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * [smoothness] is given in distance units.
      */
     fun smoothDifference(other: DistanceFun, smoothness: Double): DistanceFun =
-        CombineFun(this, other) { a, b ->
+        CombineFun(this, other,
+            MINIMUM, MAXIMUM,
+            MAXIMUM, MINIMUM) { a, b ->
             val h = (0.5 - 0.5 * (b + a) / smoothness).clamp0To1()
             mix(h, a, -b) + smoothness * h * (1.0 - h)
         }

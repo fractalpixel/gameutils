@@ -6,8 +6,13 @@ import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.geometry.int2.Int2
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
+import org.kwrench.geometry.volume.MutableVolume
+import org.kwrench.geometry.volume.Volume
+import org.kwrench.math.max
 import org.kwrench.math.modPositive
 import java.lang.IllegalArgumentException
+import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.sqrt
 
 
@@ -164,4 +169,42 @@ inline fun Int3.iterate(offset: Int3 = Int3.ZEROES, iteratingInt3: MutableInt3 =
     }
 }
 
+/**
+ * Moves all corners of the volume by the specified offset.
+ */
+fun MutableVolume.translate(offset: Double3): MutableVolume {
+    this.set(
+        this.minX + offset.x,
+        this.minY + offset.y,
+        this.minZ + offset.z,
+        this.maxX + offset.x,
+        this.maxY + offset.y,
+        this.maxZ + offset.z,
+        this.empty
+    )
+    return this
+}
 
+/**
+ * Returns the shortest distance from the volume to the point.
+ * If the point is inside the volume, 0 is returned.
+ * The volume being empty is not checked for, the user should check for it if it has relevance.
+ */
+fun Volume.distanceToPoint(p: Double3): Double {
+    val dx = max(minX - p.x, 0.0, p.x - maxX)
+    val dy = max(minY - p.y, 0.0, p.y - maxY)
+    val dz = max(minZ - p.z, 0.0, p.z - maxZ)
+    return sqrt(dx*dx + dy*dy + dz*dz)
+}
+
+/**
+ * Returns the longest distance from any point in the volume to the point.
+ * (In practice maximum of the corner distances to the point)
+ * The volume being empty is not checked for, the user should check for it if it has relevance.
+ */
+fun Volume.maximumDistanceToPoint(p: Double3): Double {
+    val dx = max(abs(minX - p.x), abs(p.x - maxX))
+    val dy = max(abs(minY - p.y), abs(p.y - maxY))
+    val dz = max(abs(minZ - p.z), abs(p.z - maxZ))
+    return sqrt(dx*dx + dy*dy + dz*dz)
+}

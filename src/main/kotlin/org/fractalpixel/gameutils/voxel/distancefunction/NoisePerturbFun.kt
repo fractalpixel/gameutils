@@ -1,6 +1,9 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
+import org.fractalpixel.gameutils.utils.translate
 import org.kwrench.geometry.double3.Double3
+import org.kwrench.geometry.volume.MutableVolume
+import org.kwrench.geometry.volume.Volume
 import org.kwrench.noise.OpenSimplexNoise
 import org.kwrench.random.Rand
 
@@ -22,5 +25,21 @@ class NoisePerturbFun(var distanceFun: DistanceFun,
         val yp = y + noiseY.noise(x * noiseScale.x, y * noiseScale.y, z * noiseScale.z) * noiseAmplitude.y + noiseOffset.y
         val zp = z + noiseZ.noise(x * noiseScale.x, y * noiseScale.y, z * noiseScale.z) * noiseAmplitude.z + noiseOffset.z
         return distanceFun(xp, yp, zp)
+    }
+
+    override fun getMin(volume: Volume): Double {
+        return distanceFun.getMin(perturbVolume(volume))
+    }
+
+    override fun getMax(volume: Volume): Double {
+        return distanceFun.getMax(perturbVolume(volume))
+    }
+
+    private fun perturbVolume(volume: Volume): MutableVolume {
+        // NOTE: Assumes the noise function returns a value in the -1..1 range.
+        val perturbedVolume = MutableVolume(volume)
+        perturbedVolume.expand(noiseAmplitude)
+        perturbedVolume.translate(noiseOffset)
+        return perturbedVolume
     }
 }

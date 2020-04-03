@@ -11,6 +11,8 @@ import org.kwrench.geometry.int3.MutableInt3
  */
 // TODO: Have extra non-visible layer in each direction, where the chunks are being asynchronously loaded,
 //       so that when they get into view, most/all are already loaded.
+// TODO: Build new meshes in separate threads, when model available assign it and use it after that.
+//       Check that models created on OpenGL thread?  The depth data and model shape can still be calculated in other threads.
 class VoxelDetailLevel(
     val terrain: VoxelTerrain,
     val level: Int,

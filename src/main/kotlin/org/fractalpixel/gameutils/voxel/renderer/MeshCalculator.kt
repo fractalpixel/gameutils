@@ -9,6 +9,7 @@ import org.fractalpixel.gameutils.voxel.VoxelTerrain
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
+import org.kwrench.geometry.volume.MutableVolume
 import kotlin.math.abs
 
 /**
@@ -19,11 +20,18 @@ class MeshCalculator(private val configuration: VoxelConfiguration) {
     private val voxelVertexIndexes = ShortArray(configuration.blockCornerCountInChunk) {-1}
     private val distanceCache = CachedDistances(configuration)
 
+    private val chunkVolume = MutableVolume()
+
     /**
      * Create libgdx 3D mesh for the specified chunk position and level, given the specified terrain function.
      * Returns null if the chunk does not have any surfaces (completely solid or air).
      */
     fun createMesh(terrain: VoxelTerrain, pos: Int3, level: Int): Mesh? {
+        // Determine if the chunk is all empty or solid using min and max bounds for the volume,
+        // for quick skipping of chunks without content.
+        configuration.getChunkVolume(pos, level, chunkVolume)
+        if (!terrain.distanceFun.mayContainSurface(chunkVolume)) return null
+
         // Calculate distance values over the chunk
         distanceCache.calculate(terrain.distanceFun, pos, level)
 
