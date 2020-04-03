@@ -32,7 +32,7 @@ data class VoxelConfiguration(
     val detailLevelCount: Int = 1,
     val mostDetailedDetailLevel: Int = -1,
     val chunkSize: Int = 8,
-    val levelSize: Int = 8,
+    val levelSize: Int = 16,
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
     val debugLines: Boolean = true) {
 

@@ -10,12 +10,17 @@ import org.kwrench.geometry.int3.Int3
  * Used to cache distance field values for one chunk.
  * Reusable.  Not thread safe (use thread local).
  */
-class CachedDistances(var distanceFun: DistanceFun,
-                      val configuration: VoxelConfiguration) {
+class CachedDistances(val configuration: VoxelConfiguration) {
 
     val actualSize = configuration.chunkCornersSize
 
     val distance = DoubleArray(actualSize * actualSize * actualSize) {1.0}
+
+    var isAir: Boolean = false
+        private set
+
+    var isSolid: Boolean = false
+        private set
 
     private val tempPos = MutableDouble3()
     private val tempNormal = MutableDouble3()
@@ -31,11 +36,14 @@ class CachedDistances(var distanceFun: DistanceFun,
      * Fills distance array based on distance function.
      * Overlaps one step over each neighbouring chunk.
      */
-    fun calculate(chunkPos: Int3, level: Int) {
+    fun calculate(distanceFun: DistanceFun, chunkPos: Int3, level: Int) {
         this.level = level
 
         this.worldStep = configuration.blockWorldSize(level)
         val worldCornerPos = configuration.chunkWorldCornerPos(chunkPos, level)
+
+        isAir = true
+        isSolid = true
 
         var index = 0
 
@@ -47,7 +55,12 @@ class CachedDistances(var distanceFun: DistanceFun,
             for (y in 0 until configuration.chunkCornersSize) {
                 xp = worldCornerPos.x.toDouble() - worldStep
                 for (x in 0 until configuration.chunkCornersSize) {
-                    distance[index++] = distanceFun(xp, yp, zp)
+                    val d = distanceFun(xp, yp, zp)
+                    distance[index++] = d
+
+                    if (d > 0) isSolid = false;
+                    if (d <= 0) isAir = false;
+
                     xp += worldStep
                 }
                 yp += worldStep
@@ -60,7 +73,7 @@ class CachedDistances(var distanceFun: DistanceFun,
      * Get normal for the specified position.
      * Samples the distance field to get an accurate normal
      */
-    fun getNormal(position: Vector3, normalOut: Vector3) {
+    fun getNormal(distanceFun: DistanceFun, position: Vector3, normalOut: Vector3) {
         tempPos.set(position)
         distanceFun.getNormal(tempPos, worldStep * 0.5, tempNormal)
         normalOut.set(tempNormal)

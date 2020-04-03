@@ -15,7 +15,8 @@ class VoxelDetailLevel(
     val terrain: VoxelTerrain,
     val level: Int,
     val configuration: VoxelConfiguration,
-    val chunkPool: RecyclingPool<VoxelRenderChunk>
+    val chunkPool: RecyclingPool<VoxelRenderChunk>,
+    val meshCalculatorPool: RecyclingPool<MeshCalculator>
 ) {
 
     private val visibleAreaCorner = MutableInt3()
@@ -23,10 +24,18 @@ class VoxelDetailLevel(
     private val chunkBuffer = PanBuffer(
         configuration.levelExtent,
         disposer = chunkPool::release) { pos ->
-        // Calculate new chunk for position
-        // TODO: This should be done asynchronously
+        // Reuse or create new chunk
         val chunk = chunkPool.obtain()
+
+        // Initialize chunk
         chunk.init(terrain, level, pos)
+
+        // Build chunk model
+        // TODO: This should be done asynchronously
+        val meshCalculator = meshCalculatorPool.obtain()
+        chunk.buildChunk(meshCalculator)
+        meshCalculatorPool.release(meshCalculator)
+
         chunk
     }
 
