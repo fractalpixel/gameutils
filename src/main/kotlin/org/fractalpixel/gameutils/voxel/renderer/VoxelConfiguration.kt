@@ -6,6 +6,7 @@ import org.fractalpixel.gameutils.libgdxutils.GdxColorType
 import org.fractalpixel.gameutils.libgdxutils.setWithScaleAddAndFloor
 import org.fractalpixel.gameutils.utils.iterate
 import org.fractalpixel.gameutils.utils.sub
+import org.kwrench.checking.Check
 import org.kwrench.color.GenColor
 import org.kwrench.color.colorspace.HSLColorSpace
 import org.kwrench.color.colorspace.HSLuvColorSpace
@@ -26,22 +27,25 @@ import kotlin.math.pow
  *
  * Also contains functions for doing most of the tricky coordinate math for voxel blocks, chunks and detail levels.
  *
- *
  * [chunkSize] number of blocks in a chunk along each axis.
  */
 data class VoxelConfiguration(
     val detailLevelCount: Int = 1,
     val mostDetailedDetailLevel: Int = -1,
     val chunkSize: Int = 8,
-    val levelSize: Int = 12,
+    val levelSize: Int = 16,
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
     val debugLines: Boolean = true) {
-
 
     // The block corners in a chunk, so one more than blocks in each direction and one extra overlap covering/overlapping gaps.
     val overlap = 1 // Can be 0 (cracks), 1 (overlap in negative direction), or 2 (overlap in both directions).
     val chunkCornersSize = chunkSize + 1 + overlap
     val blockCornerCountInChunk = chunkCornersSize * chunkCornersSize * chunkCornersSize
+
+    init {
+        // Vertex indexes are shorts, so we can't have too large chunks, or we'd crash/bug out on worst-case terrain
+        Check.lessOrEqual(blockCornerCountInChunk, "maximum possible vertexes (from chunkSize $chunkSize)", Short.MAX_VALUE.toInt(), "Short.MAX_VALUE")
+    }
 
     val blockCountInChunk: Int = chunkSize * chunkSize * chunkSize
     val chunkCountInLevel: Int = levelSize * levelSize * levelSize

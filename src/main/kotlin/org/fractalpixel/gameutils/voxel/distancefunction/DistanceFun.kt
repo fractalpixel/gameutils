@@ -14,6 +14,9 @@ import kotlin.math.min
  * A distance function that defines a 3D object.  Render by finding and rendering the isosurface (surface where function returns zero).
  * The function returns the distance from the surface at a queried point, returning negative value if the point is inside the object.
  */
+// TODO: Consider optimizing distance functions by having them generate code that is compiled with some on-the-fly compiler
+//       (does e.g. Lua generate compiled and fast bytecode these days?).
+//       This gets rid of a lot of object referencing in a critical path.
 interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
 
     /**

@@ -14,12 +14,10 @@ import org.fractalpixel.gameutils.voxel.VoxelTerrain
  *   https://github.com/mikolalysenko/mikolalysenko.github.com/blob/master/Isosurface/js/surfacenets.js
  *   and https://github.com/TomaszFoster/NaiveSurfaceNets/blob/master/NaiveSurfaceNets.cs
  */
-// TODO: Restrict number of voxels in chunk to less than size of Short, so that it works
-//       even in the worst case where a vertex is generated for each voxel (32*32*32 size should work with signed shorts,
-//       if vertexes are 0-based (check)).
 // TODO: Add level of detail
 // TODO: Add materials & texturing (blend between 3 most present materials or similar - keep track of material amounts
 //       in small integer values (grams / milliliters)? -> no risk of creating / destroying matter)
+// TODO: Some kind of immediate mode (debugging) UI, that can show e.g. memory usage graphs and other stats.
 class VoxelRendererLayer(val terrain: VoxelTerrain,
                          val voxelConfiguration: VoxelConfiguration = VoxelConfiguration()
 ): Layer3D() {

@@ -3,6 +3,7 @@ package org.fractalpixel.gameutils.voxel.renderer
 import com.badlogic.gdx.graphics.Mesh
 import com.badlogic.gdx.math.Vector3
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
+import org.fractalpixel.gameutils.utils.MeshPool
 import org.fractalpixel.gameutils.utils.getCoordinate
 import org.fractalpixel.gameutils.utils.setCoordinate
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
@@ -70,7 +71,9 @@ class MeshCalculator(private val configuration: VoxelConfiguration) {
         }
 
         // Build shape from the surface points we found
-        return shapeBuilder.createMesh()
+        // TODO: This needs to be in OpenGL thread, not the above, so split in some way when making threaded calculation
+        val mesh = meshPool.obtain(shapeBuilder.vertexCount, shapeBuilder.indexCount)
+        return shapeBuilder.updateMesh(mesh, false)
     }
 
     private inline fun calculateVertexPosition(
@@ -208,6 +211,9 @@ class MeshCalculator(private val configuration: VoxelConfiguration) {
 
 
     companion object {
+
+        val meshPool = MeshPool() // This needs to be accessed from the OpenGL thread anyway, so keep it here.
+
         private val shapeBuilder = ShapeBuilder()
 
         private val cubeEdges = IntArray(24)

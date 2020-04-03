@@ -61,6 +61,11 @@ class ShapeBuilder {
     val vertexCount: Int get() = nextVertexId.toInt()
 
     /**
+     * Number of indexes currently in the mesh being built
+     */
+    val indexCount: Int get() = indexes.size
+
+    /**
      * Adds data for the specified vertex to the vertex data array.
      * @param pos The position of the vertex. The transformation stack will be applied to it.
      * @return the index of the added vertex.
@@ -177,13 +182,26 @@ class ShapeBuilder {
                    normalizeNormals: Boolean = true,
                    clearAfterwards: Boolean = true): Mesh {
 
-        if (normalizeNormals) normalizeNormals()
-
         val mesh = Mesh(isStatic,
              vertexData.size / vertexEntrySize,
                         indexes.size,
                         VertexAttribute.Position(),
                         VertexAttribute.Normal())
+
+        return updateMesh(mesh, normalizeNormals, clearAfterwards)
+    }
+
+    /**
+     * Updates a mesh with the shape defined in this shape builder.
+     * The mesh must not be static.
+     */
+    fun updateMesh(mesh: Mesh,
+                   normalizeNormals: Boolean = true,
+                   clearAfterwards: Boolean = true): Mesh {
+
+        if (normalizeNormals) normalizeNormals()
+
+        // Set shape data
         mesh.setVertices(vertexData.items, 0, vertexData.size)
         mesh.setIndices(indexes.items, 0, indexes.size)
 

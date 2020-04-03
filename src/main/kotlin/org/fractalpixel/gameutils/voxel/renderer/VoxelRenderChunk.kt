@@ -24,7 +24,6 @@ import kotlin.math.abs
 /**
  * Holds rendering data for a voxel chunk.
  */
-// TODO: Reuse models, allocate some extra vertexes, if they are not enough re-allocate it.
 class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
     private val pos = MutableInt3()
@@ -37,6 +36,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         private set
 
     private var modelInstance: ModelInstance? = null
+    private var mesh: Mesh? = null
 
     fun init(terrain: VoxelTerrain,
              level: Int,
@@ -49,6 +49,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
     fun buildChunk(meshCalculator: MeshCalculator) {
         // Create mesh
         val mesh = meshCalculator.createMesh(terrain, pos, level)
+        this.mesh = mesh
 
         if (mesh == null && !configuration.debugLines) {
             // In this case we have nothing to render, so keep fields null
@@ -77,7 +78,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
             corner.add(configuration.blockTypeDebugLineSpacing * sideLen)
             sideLen *= (1f - 2f * configuration.blockTypeDebugLineSpacing)
 
-            // Debug visualize this:  TODO: Remove
+            // Debug visualize this:  TODO: Remove or make different debug visualization modes if needed?
             val mayContainSurface = terrain.distanceFun.mayContainSurface(configuration.getChunkVolume(pos, level))
             modelBuilder.buildWireframeBoxPart(corner, sideLen, color = configuration.calculateBlockLevelDebugColor(level, mayContainSurface, mesh != null))
         }
@@ -99,25 +100,24 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
      * Update mesh based on latest terrain distance function.
      */
     fun update() {
-        // TODO: Update mesh of world edited
+        // TODO: Update mesh if world edited
     }
 
     override fun reset() {
         terrain = emptyTerrain
         level = 0
         pos.zero()
-
-        // TODO: Re-use model mesh too if it would fit the structure..
-        modelInstance?.model?.dispose()
         modelInstance = null
+
+        // Free mesh for later re-use
+        val m = mesh
+        if (m != null) MeshCalculator.meshPool.release(m)
+        mesh = null
     }
 
     override fun dispose() {
         reset()
     }
-
-
-
 
     companion object {
         private val emptyTerrain = VoxelTerrain(ConstantFun(1.0))
