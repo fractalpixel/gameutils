@@ -141,7 +141,9 @@ data class VoxelConfiguration(
         0.0, 1.0)
 
     val blockTypeDebugLineSpacing = 0.005f
+
     val blockEdgeDebugLineColor = Color(0.35f, 0.35f, 0.35f, 0.5f)
+
     fun calculateBlockLevelDebugColor(level: Int, mayContainSurface: Boolean, hasMesh: Boolean): Color {
         val hue = mix(relativeLevel(level), 0.15, 0.7)
         return GenColor(hue, if (mayContainSurface) 0.9 else 0.25, if (hasMesh) 0.8 else if (mayContainSurface) 0.3 else 0.1, 1.0, HSLColorSpace).toColor(GdxColorType)

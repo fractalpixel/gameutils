@@ -11,14 +11,12 @@ import org.kwrench.geometry.int3.MutableInt3
  */
 // TODO: Have extra non-visible layer in each direction, where the chunks are being asynchronously loaded,
 //       so that when they get into view, most/all are already loaded.
-// TODO: Build new meshes in separate threads, when model available assign it and use it after that.
-//       Check that models created on OpenGL thread?  The depth data and model shape can still be calculated in other threads.
 class VoxelDetailLevel(
     val terrain: VoxelTerrain,
     val level: Int,
     val configuration: VoxelConfiguration,
     val chunkPool: RecyclingPool<VoxelRenderChunk>,
-    val meshCalculatorPool: RecyclingPool<MeshCalculator>
+    val shapeCalculatorPool: RecyclingPool<ShapeCalculator>
 ) {
 
     private val visibleAreaCorner = MutableInt3()
@@ -26,17 +24,15 @@ class VoxelDetailLevel(
     private val chunkBuffer = PanBuffer(
         configuration.levelExtent,
         disposer = chunkPool::release) { pos ->
+
         // Reuse or create new chunk
         val chunk = chunkPool.obtain()
 
         // Initialize chunk
         chunk.init(terrain, level, pos)
 
-        // Build chunk model
-        // TODO: This should be done asynchronously
-        val meshCalculator = meshCalculatorPool.obtain()
-        chunk.buildChunk(meshCalculator)
-        meshCalculatorPool.release(meshCalculator)
+        // Start calculating chunk shape in the background
+        chunk.calculateShapeInBackground(shapeCalculatorPool)
 
         chunk
     }

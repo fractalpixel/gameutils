@@ -1,14 +1,17 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
 import com.badlogic.gdx.math.Vector3
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import org.fractalpixel.gameutils.libgdxutils.set
 import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun
 import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.geometry.int3.Int3
+import kotlin.coroutines.coroutineContext
 
 /**
  * Used to cache distance field values for one chunk.
- * Reusable.  Not thread safe (use thread local).
+ * Reusable.
  */
 class CachedDistances(val configuration: VoxelConfiguration) {
 
@@ -36,7 +39,7 @@ class CachedDistances(val configuration: VoxelConfiguration) {
      * Fills distance array based on distance function.
      * Overlaps one step over each neighbouring chunk.
      */
-    fun calculate(distanceFun: DistanceFun, chunkPos: Int3, level: Int) {
+    suspend fun calculate(distanceFun: DistanceFun, chunkPos: Int3, level: Int) {
         this.level = level
 
         this.worldStep = configuration.blockWorldSize(level)
@@ -53,6 +56,10 @@ class CachedDistances(val configuration: VoxelConfiguration) {
         for (z in 0 until configuration.chunkCornersSize) {
             yp = worldCornerPos.y.toDouble() - worldStep
             for (y in 0 until configuration.chunkCornersSize) {
+
+                // Check for job cancellation here (not in innermost loop)
+                if (coroutineContext[Job]?.isActive == false) throw CancellationException("Depth data calculation cancelled")
+
                 xp = worldCornerPos.x.toDouble() - worldStep
                 for (x in 0 until configuration.chunkCornersSize) {
                     val d = distanceFun(xp, yp, zp)
@@ -73,7 +80,7 @@ class CachedDistances(val configuration: VoxelConfiguration) {
      * Get normal for the specified position.
      * Samples the distance field to get an accurate normal
      */
-    fun getNormal(distanceFun: DistanceFun, position: Vector3, normalOut: Vector3) {
+    suspend fun getNormal(distanceFun: DistanceFun, position: Vector3, normalOut: Vector3) {
         tempPos.set(position)
         distanceFun.getNormal(tempPos, worldStep * 0.5, tempNormal)
         normalOut.set(tempNormal)

@@ -1,9 +1,9 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
-import com.badlogic.gdx.graphics.Mesh
 import com.badlogic.gdx.math.Vector3
+import kotlinx.coroutines.*
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
-import org.fractalpixel.gameutils.utils.MeshPool
+import org.fractalpixel.gameutils.utils.RecyclingPool
 import org.fractalpixel.gameutils.utils.getCoordinate
 import org.fractalpixel.gameutils.utils.setCoordinate
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
@@ -11,23 +11,29 @@ import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
 import org.kwrench.geometry.volume.MutableVolume
+import kotlin.coroutines.coroutineContext
 import kotlin.math.abs
 
 /**
- * Not thread safe.
+ * Calculates the geometry of a chunk, but does not actually create OpenGL objects, to allow this
+ * to be calculated asynchronously in multiple threads.
+ *
+ * This class holds various temporary data structures that can be re-used for further calculations,
+ * avoiding frequent memory allocation and de-allocation.
  */
-class MeshCalculator(private val configuration: VoxelConfiguration) {
+class ShapeCalculator(private val configuration: VoxelConfiguration) {
 
     private val voxelVertexIndexes = ShortArray(configuration.blockCornerCountInChunk) {-1}
     private val distanceCache = CachedDistances(configuration)
-
     private val chunkVolume = MutableVolume()
+    private val voxelCornerDepths = DoubleArray(8)
+    private val voxelCornerPositions = Array<Vector3>(8) { Vector3() }
 
     /**
-     * Create libgdx 3D mesh for the specified chunk position and level, given the specified terrain function.
+     * Create shape data for the specified chunk position and level, given the specified terrain function.
      * Returns null if the chunk does not have any surfaces (completely solid or air).
      */
-    fun createMesh(terrain: VoxelTerrain, pos: Int3, level: Int): Mesh? {
+    suspend fun buildShape(terrain: VoxelTerrain, pos: Int3, level: Int): ShapeBuilder? {
         // Determine if the chunk is all empty or solid using min and max bounds for the volume,
         // for quick skipping of chunks without content.
         configuration.getChunkVolume(pos, level, chunkVolume)
@@ -38,6 +44,9 @@ class MeshCalculator(private val configuration: VoxelConfiguration) {
 
         // No need to calculate a mesh if all points are inside or outside the terrain
         if (distanceCache.isSolid || distanceCache.isAir) return null
+
+        // Obtain shape builder
+        val shapeBuilder = shapeBuilderPool.obtain()
 
         // Iterate voxel space
         val sideCellCount = configuration.chunkCornersSize - 1
@@ -55,11 +64,29 @@ class MeshCalculator(private val configuration: VoxelConfiguration) {
         for (z in 0 until sideCellCount) {
             yp = chunkWorldCorner.y - worldStep
             for (y in 0 until sideCellCount) {
+
+                // Check for job cancellation here (not in innermost loop)
+                if (coroutineContext[Job]?.isActive == false) throw CancellationException("Mesh calculation cancelled")
+
                 xp = chunkWorldCorner.x - worldStep
                 for (x in 0 until sideCellCount) {
 
                     voxelPos.set(x, y, z)
-                    calculateVertexPosition(terrain, distanceCache, index, voxelPos, xp, yp, zp, worldStep, indexStepDelta, tempVec, tempPos, tempNormal)
+                    calculateVertexPosition(
+                        shapeBuilder,
+                        terrain,
+                        distanceCache,
+                        index,
+                        voxelPos,
+                        xp,
+                        yp,
+                        zp,
+                        worldStep,
+                        indexStepDelta,
+                        tempVec,
+                        tempPos,
+                        tempNormal
+                    )
 
                     index++
 
@@ -70,13 +97,11 @@ class MeshCalculator(private val configuration: VoxelConfiguration) {
             zp += worldStep
         }
 
-        // Build shape from the surface points we found
-        // TODO: This needs to be in OpenGL thread, not the above, so split in some way when making threaded calculation
-        val mesh = meshPool.obtain(shapeBuilder.vertexCount, shapeBuilder.indexCount)
-        return shapeBuilder.updateMesh(mesh, false)
+        return shapeBuilder
     }
 
-    private inline fun calculateVertexPosition(
+    private suspend inline fun calculateVertexPosition(
+        shapeBuilder: ShapeBuilder,
         terrain: VoxelTerrain,
         distanceCache: CachedDistances,
         index: Int,
@@ -212,14 +237,10 @@ class MeshCalculator(private val configuration: VoxelConfiguration) {
 
     companion object {
 
-        val meshPool = MeshPool() // This needs to be accessed from the OpenGL thread anyway, so keep it here.
-
-        private val shapeBuilder = ShapeBuilder()
+        val shapeBuilderPool = RecyclingPool<ShapeBuilder>(ShapeBuilder::class)
 
         private val cubeEdges = IntArray(24)
         private val edgeTable = IntArray(256)
-        private val voxelCornerDepths = DoubleArray(8)
-        private val voxelCornerPositions = Array<Vector3>(8) { Vector3() }
 
         init {
             initializeCubeEdgesTable()

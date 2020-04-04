@@ -1,6 +1,10 @@
 package org.fractalpixel.gameutils.utils
 
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.kwrench.collections.bag.Bag
+import java.lang.IllegalArgumentException
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 
@@ -17,19 +21,19 @@ import kotlin.reflect.full.isSubclassOf
  * before the objects own reset and dispose functions, this is useful if pooling some third party object that doesn't
  * implement [Recyclable].  If you do not need to do any special reset or dispose actions, you can also use objects
  * without implementing [Recyclable] or providing reset or dispose functions.
- *
- *
- * Not thread safe.
  */
 // TODO: Move to utils library
-// TODO: Add thread safety?
 open class RecyclingPool<T: Any>(
     val type: KClass<T>,
     val maxPoolSize: Int = 10_000,
     val resetInstance: ((T) -> Unit)? = null,
     val disposeInstance: ((T) -> Unit)? = null,
-    val createInstance: () -> T = {type.javaObjectType.newInstance()}
+    val createInstance: () -> T = {type.javaObjectType.newInstance()},
+    val ensureNotAlreadyContained: Boolean = true
  ) {
+
+    // Used to lock access to internal state from different threads or co-routines
+    protected val mutex = Mutex()
 
     // Stores previously released, unused objects.
     protected val pool = Bag<T>()
@@ -42,19 +46,29 @@ open class RecyclingPool<T: Any>(
     /**
      * Obtain a new object from this pool, will use any recycled objects if available, or create a new instance if not.
      */
-    fun obtain(): T = pool.removeLast() ?: createInstance()
+    fun obtain(): T = runBlocking {
+        mutex.withLock {
+            pool.removeLast() ?: createInstance()
+        }
+    }
+
 
     /**
      * Release a recyclable object to this pool for possible later use.
      */
-    fun release(obj: T) {
-        if (pool.size() < maxPoolSize) {
-            // Reset object  and store it
-            resetObject(obj)
-            pool.add(obj)
-        } else {
-            // Pool full, dispose released object
-            disposeObject(obj)
+    fun release(obj: T) = runBlocking {
+        mutex.withLock {
+            if (pool.size() < maxPoolSize) {
+                // Check that not already contained
+                if (ensureNotAlreadyContained && pool.contains(obj)) throw IllegalArgumentException("Can't release $obj twice!")
+
+                // Reset object  and store it
+                resetObject(obj)
+                pool.add(obj)
+            } else {
+                // Pool full, dispose released object
+                disposeObject(obj)
+            }
         }
     }
 
@@ -63,9 +77,11 @@ open class RecyclingPool<T: Any>(
      * This would typically be called when the pool is no longer in use, e.g. at program termination, to free allocated
      * resources, but it can also be used in other situations to temporary remove stored objects.
      */
-    fun dispose() {
-        pool.forEach(::disposeObject)
-        pool.clear()
+    fun dispose() = runBlocking {
+        mutex.withLock {
+            pool.forEach(::disposeObject)
+            pool.clear()
+        }
     }
 
     private fun resetObject(obj: T) {

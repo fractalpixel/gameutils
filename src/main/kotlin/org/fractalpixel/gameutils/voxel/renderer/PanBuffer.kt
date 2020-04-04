@@ -19,6 +19,8 @@ import java.lang.IllegalStateException
  * The area starts out at [initialPosition] and can be moved with [setPosition] or [offset].
  * [cornerPosition] contains the current position of the area (the area extends from the position towards positive
  * coordinate axis [size] amount (exclusive).
+ *
+ * Note that this does lazy recalculation, a missing value is only calculated if it is requested.
  */
 class PanBuffer<T: Any>(
     initialSize: Int3,
@@ -123,8 +125,6 @@ class PanBuffer<T: Any>(
                 val value = get(pos)
                 if (value != null) disposer(value)
                 set(pos, null)
-
-                // TODO: Start recalculating any data that is null
             }
         }
     }

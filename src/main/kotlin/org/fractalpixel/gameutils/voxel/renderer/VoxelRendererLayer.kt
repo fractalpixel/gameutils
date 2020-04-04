@@ -28,8 +28,8 @@ class VoxelRendererLayer(val terrain: VoxelTerrain,
         VoxelRenderChunk::class,
         createInstance = {VoxelRenderChunk(voxelConfiguration)})
 
-    private val meshCalculatorPool = RecyclingPool(MeshCalculator::class, createInstance = {
-        MeshCalculator(voxelConfiguration)
+    private val meshCalculatorPool = RecyclingPool(ShapeCalculator::class, createInstance = {
+        ShapeCalculator(voxelConfiguration)
     })
 
     init {
@@ -43,4 +43,5 @@ class VoxelRendererLayer(val terrain: VoxelTerrain,
             detailLevel.render(context)
         }
     }
+
 }
