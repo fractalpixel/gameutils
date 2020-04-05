@@ -119,28 +119,28 @@ class PanBuffer<T: Any>(
 
         // Clear any data that scrolled out
         oldEnd.set(oldPos).add(size)
-        iteratePositions(ti) { pos ->
-            if (!pos.inRange(oldPos, oldEnd)) {
+        iteratePositions(ti) { globalPos, localPos ->
+            if (!globalPos.inRange(oldPos, oldEnd)) {
                 // Not in old range, so we do not have this data
-                val value = get(pos)
+                val value = get(globalPos)
                 if (value != null) disposer(value)
-                set(pos, null)
+                set(globalPos, null)
             }
         }
     }
 
-    fun iterate(iteratingInt3: MutableInt3 = MutableInt3(), code: (pos: Int3, value: T) -> Unit) {
+    fun iterate(iteratingInt3: MutableInt3 = MutableInt3(), code: (globalPos: Int3, localPos: Int3, value: T) -> Unit) {
         size.iterate(iteratingInt3 = iteratingInt3) {localPos ->
             val value = getLocal(localPos)
             tempGlobalPos.set(cornerPos).add(localPos)
-            code(tempGlobalPos, value)
+            code(tempGlobalPos, localPos, value)
         }
     }
 
-    fun iteratePositions(iteratingInt3: MutableInt3 = MutableInt3(), code: (pos: Int3) -> Unit) {
+    fun iteratePositions(iteratingInt3: MutableInt3 = MutableInt3(), code: (globalPos: Int3, localPos: Int3) -> Unit) {
         size.iterate(iteratingInt3 = iteratingInt3) {localPos ->
             tempGlobalPos.set(cornerPos).add(localPos)
-            code(tempGlobalPos)
+            code(tempGlobalPos, localPos)
         }
     }
 }

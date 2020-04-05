@@ -48,11 +48,12 @@ class VoxelDetailLevel(
 
     fun render(context: RenderingContext3D) {
         updateCameraPos(context.camera.position)
-        // DEBUG: Focus center:
-        //updateCameraPos(Vector3.Zero)
 
-        chunkBuffer.iterate() { pos, chunk ->
-            chunk.render(context)
+        chunkBuffer.iterate() { globalPos, localPos, chunk ->
+
+            if (!configuration.isInLevelHole(level, localPos)) {
+                chunk.render(context)
+            }
         }
     }
 

@@ -138,7 +138,9 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
             if (configuration.debugLines && (configuration.debugLinesForEmptyBlocks || hasSurface)) {
                 val corner = configuration.chunkWorldCornerPos(pos, level)
                 var sideLen = configuration.chunkWorldSize(level).toFloat()
-                modelBuilder.buildWireframeBoxPart(corner, sideLen, color = configuration.blockEdgeDebugLineColor)
+                if (configuration.debugOutLines) {
+                    modelBuilder.buildWireframeBoxPart(corner, sideLen, color = configuration.blockEdgeDebugLineColor)
+                }
 
                 corner.add(configuration.blockTypeDebugLineSpacing * sideLen)
                 sideLen *= (1f - 2f * configuration.blockTypeDebugLineSpacing)
