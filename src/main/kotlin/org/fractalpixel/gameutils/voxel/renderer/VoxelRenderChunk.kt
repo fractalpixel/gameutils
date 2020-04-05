@@ -127,14 +127,15 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
             modelBuilder.begin()
 
             // Add terrain shape to model
-            if (mesh != null) {
+            val hasSurface = mesh != null
+            if (hasSurface) {
                 val material = Material()
-                material.set(ColorAttribute.createDiffuse(1f, 1f, 1f, 1f))
+                material.set(ColorAttribute.createDiffuse(0.8f, 0.8f, 0.8f, 1f))
                 modelBuilder.part("mesh", mesh, GL20.GL_TRIANGLES, material)
             }
 
             // Add some wireframes showing where the chunks are if requested
-            if (configuration.debugLines) {
+            if (configuration.debugLines && (configuration.debugLinesForEmptyBlocks || hasSurface)) {
                 val corner = configuration.chunkWorldCornerPos(pos, level)
                 var sideLen = configuration.chunkWorldSize(level).toFloat()
                 modelBuilder.buildWireframeBoxPart(corner, sideLen, color = configuration.blockEdgeDebugLineColor)
@@ -146,7 +147,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
                 val mayContainSurface = terrain.distanceFun.mayContainSurface(configuration.getChunkVolume(pos, level))
                 modelBuilder.buildWireframeBoxPart(
                     corner, sideLen, color = configuration.calculateBlockLevelDebugColor(
-                        level, mayContainSurface, mesh != null
+                        level, mayContainSurface, hasSurface
                     )
                 )
             }

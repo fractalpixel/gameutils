@@ -34,7 +34,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
     // TODO: Add coordinate transformation ops (scale & translate & maybe rotate - should probably be able to take function params.)
 
     val planetRadius = 10_000.0
-    val mediumAmplitudeNoise = NoiseFun(1.0/1575.12, 10.0).pow(ConstantFun(2.0))
+    val mediumAmplitudeNoise = NoiseFun(1.0/1575.12, 10.0).abs().pow(ConstantFun(2.0))
     val planetFunction: DistanceFun =
         SphereFun(planetRadius, ImmutableDouble3(0.0, -planetRadius, 0.0)).add(
             NoiseFun(
@@ -84,13 +84,21 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val lookAt = Vector3(0f, 0f, 0f)
         cameraSystem.set(cameraPosition, lookAt)
 
+        cameraSystem.farClippingPlane = 10_000f
+
         // TODO: Mouse & keyboard controlled camera
         // Rotate camera
-        val radius = 30f
+        val radius = 5000f
         val speed = 0.02f
         world.addSystem { _, time ->
-            cameraPosition.x = (radius * -cos(speed * time.secondsSinceStart * Tau)).toFloat()
-            cameraPosition.z = (radius * sin(speed * time.secondsSinceStart * Tau)).toFloat()
+            cameraPosition.x = (radius * sin(time.secondsSinceStart*0.01)* -cos(speed * time.secondsSinceStart * Tau)).toFloat()
+            cameraPosition.z = (radius * cos(time.secondsSinceStart*0.001)* sin(speed * time.secondsSinceStart * Tau)).toFloat()
+            cameraPosition.y = sin(time.secondsSinceStart*0.003).toFloat() * 100f
+
+            lookAt.x = 2000f * -cos(0.001 * time.secondsSinceStart * Tau).toFloat()
+            lookAt.y = 3000f * sin(0.0001 * time.secondsSinceStart * Tau).toFloat()
+            lookAt.z = 200f * -sin(0.01 * time.secondsSinceStart * Tau).toFloat()
+
             cameraSystem.set(cameraPosition, lookAt)
         }
     }
@@ -107,9 +115,9 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val environment = Environment()
         renderingContext.environment = environment
         val light = DirectionalLight()
-        light.set(Color(0.9f, 0.98f, 0.75f, 1f), Vector3(0.62f, -1.5f, 0.1f))
+        light.set(Color(0.9f, 0.98f, 0.75f, 1f), Vector3(0.62f, -0.2f, 0.1f))
         val light2 = DirectionalLight()
-        light2.set(Color(0.5f, 0.1f, 0.25f, 1f), Vector3(-0.3f, 0.03f, -0.1f))
+        light2.set(Color(0.5f, 0.1f, 0.25f, 1f), Vector3(-0.4f, 0.03f, -0.1f))
         environment.add(light)
         environment.add(light2)
         environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.1f, 0.1f, 0.2f, 1f))

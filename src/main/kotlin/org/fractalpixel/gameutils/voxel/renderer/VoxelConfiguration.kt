@@ -35,7 +35,8 @@ data class VoxelConfiguration(
     val chunkSize: Int = 8,
     val levelSize: Int = 8,
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
-    val debugLines: Boolean = true) {
+    val debugLines: Boolean = false,
+    val debugLinesForEmptyBlocks: Boolean = false) {
 
     // The block corners in a chunk, so one more than blocks in each direction and one extra overlap covering/overlapping gaps.
     val overlap = 1 // Can be 0 (cracks), 1 (overlap in negative direction), or 2 (overlap in both directions).
