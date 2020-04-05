@@ -16,10 +16,10 @@ import org.fractalpixel.gameutils.controls.InputControlSystem
 import org.fractalpixel.gameutils.rendering.DefaultRenderingContext3D
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
-import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun
-import org.fractalpixel.gameutils.voxel.distancefunction.NoiseFun
-import org.fractalpixel.gameutils.voxel.distancefunction.SphereFun
+import org.fractalpixel.gameutils.voxel.distancefunction.*
 import org.fractalpixel.gameutils.voxel.renderer.VoxelRendererLayer
+import org.kwrench.geometry.double3.Double3
+import org.kwrench.geometry.double3.ImmutableDouble3
 import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.math.Tau
 import java.lang.Math.cos
@@ -30,7 +30,27 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
     lateinit var cameraSystem: CameraSystem
 
-    val distanceFunction: DistanceFun = (SphereFun(
+
+    // TODO: Add coordinate transformation ops (scale & translate & maybe rotate - should probably be able to take function params.)
+
+    val planetRadius = 10_000.0
+    val mediumAmplitudeNoise = NoiseFun(1.0/1575.12, 10.0).pow(ConstantFun(2.0))
+    val planetFunction: DistanceFun =
+        SphereFun(planetRadius, ImmutableDouble3(0.0, -planetRadius, 0.0)).add(
+            NoiseFun(
+                1.0/2131.32, 400.0
+            )
+        ).add(
+            ModulatedNoiseFun(
+                ConstantFun(1.0 / 113.63), mediumAmplitudeNoise
+            )
+        ).add(
+            NoiseFun(
+                1.0/17.14, 3.0
+            )
+        )
+
+    val asteroidFunction: DistanceFun = (SphereFun(
         radius = 14.0
     ).add(
         NoiseFun(
@@ -53,7 +73,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
     ).perturb(MutableDouble3(0.2, 0.3, 0.2), MutableDouble3(2.0, 1.0, 2.0))
 
 
-    val terrain = VoxelTerrain(distanceFunction)
+    val terrain = VoxelTerrain(planetFunction)
 
     override fun createProcessors(world: World) {
         world.addSystem(CaptionSystem())
@@ -64,6 +84,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val lookAt = Vector3(0f, 0f, 0f)
         cameraSystem.set(cameraPosition, lookAt)
 
+        // TODO: Mouse & keyboard controlled camera
         // Rotate camera
         val radius = 30f
         val speed = 0.02f

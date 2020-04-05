@@ -30,10 +30,10 @@ import kotlin.math.pow
  * [chunkSize] number of blocks in a chunk along each axis.
  */
 data class VoxelConfiguration(
-    val detailLevelCount: Int = 1,
-    val mostDetailedDetailLevel: Int = -1,
+    val detailLevelCount: Int = 14,
+    val mostDetailedDetailLevel: Int = 0,
     val chunkSize: Int = 8,
-    val levelSize: Int = 16,
+    val levelSize: Int = 8,
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
     val debugLines: Boolean = true) {
 

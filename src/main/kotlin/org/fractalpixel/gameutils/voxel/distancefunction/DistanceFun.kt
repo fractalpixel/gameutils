@@ -5,10 +5,12 @@ import org.fractalpixel.gameutils.voxel.distancefunction.MinMaxSampler.*
 import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.geometry.volume.Volume
+import org.kwrench.math.abs
 import org.kwrench.math.clamp0To1
 import org.kwrench.math.mix
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
 
 /**
  * A distance function that defines a 3D object.  Render by finding and rendering the isosurface (surface where function returns zero).
@@ -17,6 +19,8 @@ import kotlin.math.min
 // TODO: Consider optimizing distance functions by having them generate code that is compiled with some on-the-fly compiler
 //       (does e.g. Lua generate compiled and fast bytecode these days?).
 //       This gets rid of a lot of object referencing in a critical path.
+// TODO: Refactor getMin and getMax into a single getBounds or getRange method, (that writes to a Double2? - or perhaps own bounds datatype)
+// TODO: Add sampling scale as parameter, use to smooth noise flat which is too high frequency for sampling scale, and to skip other small features
 interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
 
     /**
@@ -77,6 +81,17 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
             MINIMUM, MAXIMUM,
             MAXIMUM, MINIMUM
         ) { a, b -> a - b }
+
+    /**
+     * Returns distance function that is this function multiplied with the other function.
+     */
+    // TODO: Fix bounds calculation for this one...
+    fun mul(other: DistanceFun): DistanceFun =
+        CombineFun(
+            this,
+            other
+        ) { a, b -> a * b }
+
 
     /**
      * Union of this object and the other.
@@ -144,6 +159,35 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      */
     fun perturb(scale: Double3 = Double3.ONES, amplitude: Double3 = Double3.ONES, offset: Double3 = Double3.ZEROES): DistanceFun = NoisePerturbFun(this, scale, amplitude, offset)
 
+    /**
+     * Raises this function to the specified power if it is larger than zero, or returns 0 if it is smaller.
+     *
+     * Note that if this function is negative, and the exponent is a fractional value, the result would be imaginary (NaN),
+     * for this reason this function is clamped to 0 if it is less than zero.
+     */
+    fun pow(exponent: DistanceFun): DistanceFun =
+        CombineFun(this, exponent) { a, b ->
+            if (a <= 0.0) 0.0 else a.pow(b)
+        }
+
+    /**
+     * Returns absolute value of this function.
+     */
+    fun abs(): DistanceFun =
+        SingleOpFun(this,
+            calculateMin = {a, volume ->
+                val minValue = a.getMin(volume)
+                val maxValue = a.getMax(volume)
+                if (minValue <= 0.0 && maxValue >= 0.0) 0.0 // Value range crosses zero, so zero is smallest possible value
+                else min(minValue.abs(), maxValue.abs())
+            },
+            calculateMax = {a, volume ->
+                val minValue = a.getMin(volume)
+                val maxValue = a.getMax(volume)
+                max(minValue.abs(), maxValue.abs())
+            }) { f ->
+            f.abs()
+        }
 
     /**
      * Calculate normal at the specified [pos].
