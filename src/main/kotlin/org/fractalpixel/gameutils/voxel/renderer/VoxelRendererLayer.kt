@@ -1,6 +1,9 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
+import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider
+import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider
 import org.fractalpixel.gameutils.layer.Layer3D
+import org.fractalpixel.gameutils.libgdxutils.loadShaderProvider
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
 import org.fractalpixel.gameutils.utils.RecyclingPool
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
@@ -20,7 +23,7 @@ import org.fractalpixel.gameutils.voxel.VoxelTerrain
 // TODO: Some kind of immediate mode (debugging) UI, that can show e.g. memory usage graphs and other stats.
 class VoxelRendererLayer(val terrain: VoxelTerrain,
                          val voxelConfiguration: VoxelConfiguration = VoxelConfiguration()
-): Layer3D() {
+): Layer3D(loadShaderProvider("shaders/default")) {
 
     private val detailLevels = ArrayList<VoxelDetailLevel>()
 

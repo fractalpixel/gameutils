@@ -9,9 +9,14 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.Material
+import com.badlogic.gdx.graphics.g3d.Shader
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
+import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader
+import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
+import com.badlogic.gdx.graphics.g3d.utils.ShaderProvider
+import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.math.Matrix4
 import com.badlogic.gdx.math.Quaternion
 import com.badlogic.gdx.math.Vector2
@@ -476,3 +481,17 @@ fun ModelBuilder.buildWireframeBoxPart(position: Vector3,
 
     if (doBeginEnd) end()
 }
+
+
+fun loadShaderProvider(internalPath: String): ShaderProvider {
+    val vert = Gdx.files.internal("$internalPath.vertex.glsl").readString()
+    val frag = Gdx.files.internal("$internalPath.fragment.glsl").readString()
+    return DefaultShaderProvider(vert, frag)
+}
+
+fun loadShaderProgram(internalPath: String): ShaderProgram {
+    val vert = Gdx.files.internal("$internalPath.vertex.glsl").readString()
+    val frag = Gdx.files.internal("$internalPath.fragment.glsl").readString()
+    return ShaderProgram(vert, frag)
+}
+

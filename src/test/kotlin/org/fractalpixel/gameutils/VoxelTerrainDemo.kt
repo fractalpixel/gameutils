@@ -1,5 +1,6 @@
 package org.fractalpixel.gameutils
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.badlogic.gdx.graphics.Color
@@ -84,7 +85,8 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val lookAt = Vector3(0f, 0f, 0f)
         cameraSystem.set(cameraPosition, lookAt)
 
-        cameraSystem.farClippingPlane = 10_000f
+        cameraSystem.nearClippingPlane = 0.001f
+        cameraSystem.farClippingPlane = 10_000_000f
 
         // TODO: Mouse & keyboard controlled camera
         // Rotate camera
@@ -105,12 +107,11 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
     override fun setupWorld(world: World) {
         val voxelRendererLayer = VoxelRendererLayer(terrain)
-        voxelRendererLayer.context = createRenderingContext(world)
+        initRenderingContext(voxelRendererLayer.context, world)
         world.createEntity(voxelRendererLayer)
     }
 
-    private fun createRenderingContext(world: World): RenderingContext3D {
-        val renderingContext: RenderingContext3D = DefaultRenderingContext3D()
+    private fun initRenderingContext(renderingContext: RenderingContext3D, world: World) {
         renderingContext.init(world)
         val environment = Environment()
         renderingContext.environment = environment
@@ -124,8 +125,9 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val pointLight = PointLight()
         pointLight.intensity
 
+        println("Buffer format: " + Gdx.graphics.bufferFormat)
+
         renderingContext.camera = cameraSystem.camera
-        return renderingContext
     }
 }
 
@@ -138,5 +140,6 @@ fun main(args: Array<String>) {
     config.title = "Voxel Terrain Demo"
     config.width = 1200
     config.height = 800
+    config.depth = 24
     LwjglApplication(VoxelTerrainDemo(), config)
 }
