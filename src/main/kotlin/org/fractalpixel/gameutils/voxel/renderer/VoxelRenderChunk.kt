@@ -1,5 +1,6 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
+import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Mesh
@@ -7,6 +8,8 @@ import com.badlogic.gdx.graphics.g3d.Material
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
+import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.math.collision.BoundingBox
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
 import org.fractalpixel.gameutils.libgdxutils.buildWireframeBoxPart
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
@@ -36,6 +39,14 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
     private var mesh: Mesh? = null
     private var modelInstance: ModelInstance? = null
 
+    /*
+    // Used for frustum culling
+    private val bounds = BoundingBox()
+    private var boundingSphereRadius = 0f
+    private val boundingSphereCenter = Vector3()
+     */
+
+
     /**
      * Initialize the position and detail level of this chunk and tell it the terrain it is located in.
      */
@@ -49,6 +60,10 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         this.level = level
         this.pos.set(pos)
         this.initialShape = shape
+        /*
+        bounds.clr()
+        //boundingSphereRadius = configuration.calculateBoundingSphere(pos, level, boundingSphereCenter)
+         */
     }
 
     /**
@@ -67,10 +82,24 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
         // Render model instance if available
         val currentModelInstance = modelInstance
-        if (currentModelInstance != null) {
+        if (currentModelInstance != null /* && isVisible(context.camera) */ ) {
             context.modelBatch.render(currentModelInstance, context.environment)
         }
     }
+
+    /* TODO: Frustrum culling doesn't seem to work correctly in LibGDX, keeps flickering between frames.
+             Might have to implement it ourselves?
+    /**
+     * Returns true if this chunk would be visible to the camera.
+     */
+    private fun isVisible(camera: Camera): Boolean {
+        //camera.update()
+        //return camera.frustum.sphereInFrustumWithoutNearFar(boundingSphereCenter, boundingSphereRadius)
+        return camera.frustum.boundsInFrustum(bounds)
+    }
+    */
+
+
 
     private fun initializeModelIfCalculated() {
         // Create OpenGL mesh when a calculation is ready
@@ -128,15 +157,24 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         if (configuration.colorizeTerrainByLevel) debugColor = wireframeColor
 
         // Add terrain shape to model
-        val material = Material()
-        material.set(ColorAttribute.createDiffuse(0.8f * debugColor.r, 0.8f * debugColor.g, 0.8f * debugColor.b, 1f))
-        modelBuilder.part("mesh", createdMesh, GL20.GL_TRIANGLES, material)
+        if (createdMesh.numVertices > 0 && createdMesh.numIndices > 0) {
+            val material = Material()
+            material.set(ColorAttribute.createDiffuse(0.8f * debugColor.r, 0.8f * debugColor.g, 0.8f * debugColor.b, 1f))
+            modelBuilder.part("mesh", createdMesh, GL20.GL_TRIANGLES, material)
+        }
 
         // Create model from chunk shape and wireframe
         val model = modelBuilder.end()
 
         // Create instance of model
-        modelInstance = ModelInstance(model)
+        val instance = ModelInstance(model)
+        modelInstance = instance
+
+        /*
+        // Initialize bounds
+        model.calculateBoundingBox(bounds)
+         */
+
     }
 
     override fun dispose() {
@@ -152,6 +190,9 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         level = 0
         pos.zero()
         modelInstance = null
+        /*
+        bounds.clr()
+         */
     }
 
     private fun releaseShape() {

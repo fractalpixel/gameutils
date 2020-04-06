@@ -92,8 +92,8 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val lookAt = Vector3(0f, 0f, 0f)
         cameraSystem.set(cameraPosition, lookAt)
 
-        cameraSystem.nearClippingPlane = 0.001f
-        cameraSystem.farClippingPlane = 10_000_000f
+        cameraSystem.nearClippingPlane = 0.01f
+        cameraSystem.farClippingPlane = 100_000f
 
         // TODO: Mouse & keyboard controlled camera
         // Rotate camera

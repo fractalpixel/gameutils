@@ -2,7 +2,9 @@ package org.fractalpixel.gameutils.voxel.renderer
 
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.math.collision.BoundingBox
 import org.fractalpixel.gameutils.libgdxutils.GdxColorType
+import org.fractalpixel.gameutils.libgdxutils.set
 import org.fractalpixel.gameutils.libgdxutils.setWithScaleAddAndFloor
 import org.fractalpixel.gameutils.utils.iterate
 import org.fractalpixel.gameutils.utils.sub
@@ -17,6 +19,7 @@ import org.kwrench.math.map
 import org.kwrench.math.mix
 import java.lang.IllegalArgumentException
 import kotlin.math.pow
+import kotlin.math.sqrt
 
 /**
  * Configuration for technical rendering settings for a voxel based landscape.
@@ -38,8 +41,8 @@ data class VoxelConfiguration(
     val chunkSize: Int = 14,
     val levelSize: Int = 10,
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
-    val debugLines: Boolean = false,
-    val debugLinesForEmptyBlocks: Boolean = false,
+    val debugLines: Boolean = true,
+    val debugLinesForEmptyBlocks: Boolean = true,
     val debugOutlines: Boolean = false,
     val colorizeTerrainByLevel: Boolean = true) {
 
@@ -92,6 +95,26 @@ data class VoxelConfiguration(
             z1 + chunkWorldSize)
 
         return volumeOut
+    }
+
+    /**
+     * Update provided axis-aligned bounding box with the volume of the chunk at the specified level and chunk pos.
+     */
+    fun calculateBounds(pos: Int3, level: Int, bounds: BoundingBox) {
+        bounds.set(getChunkVolume(pos, level))
+    }
+
+    /**
+     * Returns the radius, and sets the center
+     */
+    fun calculateBoundingSphere(pos: Int3, level: Int, boundingSphereCenter: Vector3): Float {
+        val worldCornerPos = chunkWorldCornerPos(pos, level)
+        val halfSize = chunkWorldSize(level).toFloat()
+        boundingSphereCenter.set(
+            worldCornerPos.x + halfSize,
+            worldCornerPos.y + halfSize,
+            worldCornerPos.z + halfSize)
+        return halfSize * 2f // Overestimate a bit, chunk might extend outside?  This didn't work: sqrt(halfSize*halfSize + halfSize*halfSize + halfSize*halfSize).toFloat()
     }
 
     inline fun iterateLevel(cornerChunkPos: Int3, iteratingInt3: MutableInt3 = MutableInt3(), code: (chunkPos: Int3, chunkIndex: Int) -> Unit) {
@@ -158,5 +181,6 @@ data class VoxelConfiguration(
         var hue = mix(relativeLevel(level), 0.15, 0.7)
         return GenColor(hue, if (mayContainSurface) 0.9 else 0.25, if (hasMesh) 0.8 else if (mayContainSurface) 0.3 else 0.1, 1.0, HSLColorSpace).toColor(GdxColorType)
     }
+
 
 }

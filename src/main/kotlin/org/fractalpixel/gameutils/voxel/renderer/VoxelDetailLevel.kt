@@ -146,7 +146,7 @@ class VoxelDetailLevel(
             // If we are the most detailed level, we should render
             true
         } else {
-            // Skip rendering if more detailed level convers the whole are of this chunk, and at least 1 chunk margin in all directions.
+            // Skip rendering if more detailed level covers the whole area of this chunk, and at least 1 chunk margin in all directions.
             /*
             tempVolume.setByCorner(chunkPos, Int3.ONES)
             tempVolume.mul(2) // More detailed level has all coordinates scaled by two

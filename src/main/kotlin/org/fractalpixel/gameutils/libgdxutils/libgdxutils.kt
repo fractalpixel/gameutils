@@ -21,6 +21,7 @@ import com.badlogic.gdx.math.Matrix4
 import com.badlogic.gdx.math.Quaternion
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.math.collision.BoundingBox
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.tools.texturepacker.TexturePacker
 import com.badlogic.gdx.utils.Json
@@ -31,6 +32,8 @@ import org.kwrench.geometry.int2.Int2
 import org.kwrench.geometry.int2.MutableInt2
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
+import org.kwrench.geometry.volume.MutableVolume
+import org.kwrench.geometry.volume.Volume
 import org.kwrench.math.TauFloat
 import org.kwrench.math.fastFloor
 import org.kwrench.math.round
@@ -495,3 +498,34 @@ fun loadShaderProgram(internalPath: String): ShaderProgram {
     return ShaderProgram(vert, frag)
 }
 
+/**
+ * Set this bounding box to the specified volume.
+ */
+fun BoundingBox.set(volume: Volume) {
+    if (volume.empty) {
+        this.inf()
+    }
+    else {
+        this.min.x = volume.minX.toFloat()
+        this.min.y = volume.minY.toFloat()
+        this.min.z = volume.minZ.toFloat()
+        this.max.x = volume.maxX.toFloat()
+        this.max.y = volume.maxY.toFloat()
+        this.max.z = volume.maxZ.toFloat()
+    }
+}
+
+/**
+ * Set this volume to the specified bounding box.
+ */
+fun MutableVolume.set(boundingBox: BoundingBox) {
+    this.set(
+        boundingBox.min.x.toDouble(),
+        boundingBox.min.y.toDouble(),
+        boundingBox.min.z.toDouble(),
+        boundingBox.max.x.toDouble(),
+        boundingBox.max.y.toDouble(),
+        boundingBox.max.z.toDouble(),
+        false
+    )
+}
