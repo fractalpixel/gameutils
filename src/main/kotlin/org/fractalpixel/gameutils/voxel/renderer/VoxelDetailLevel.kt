@@ -180,6 +180,8 @@ class VoxelDetailLevel(
             // Consider sub-area calculated when all chunk calculation jobs in it have finished, or it is so remote
             // that no-one has needed to create it yet
             val chunkJob = chunkBuffer.getIfCalculatedOrNull(pos)
+            chunkJob?.isCompleted != false
+            /*
             if (chunkJob == null) true // No-one has tried to access this place yet, so it can't be in vision range
             else if (!chunkJob.isCompleted) false // Still calculating
             else {
@@ -190,6 +192,8 @@ class VoxelDetailLevel(
                 else true // chunk.initialized // Chunk should have the model created and in use
                 // TODO: For some reason the above doesn't work.. and there seems to be occasional frames where one chunk is missing (could maybe be gradient descent screening too? - but why only 1 frame in that case?)
             }
+            */
+
         }
     }
 
