@@ -25,7 +25,6 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
 
     private val voxelVertexIndexes = ShortArray(configuration.blockCornerCountInChunk) {-1}
     private val distanceCache = CachedDistances(configuration)
-    private val chunkVolume = MutableVolume()
     private val voxelCornerDepths = DoubleArray(8)
     private val voxelCornerPositions = Array<Vector3>(8) { Vector3() }
 
@@ -36,6 +35,7 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
     suspend fun buildShape(terrain: VoxelTerrain, pos: Int3, level: Int): ShapeBuilder? {
         // Determine if the chunk is all empty or solid using min and max bounds for the volume,
         // for quick skipping of chunks without content.
+        val chunkVolume = MutableVolume()
         configuration.getChunkVolume(pos, level, chunkVolume)
         if (!terrain.distanceFun.mayContainSurface(chunkVolume)) return null
 
@@ -62,11 +62,15 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
         val tempNormal = Vector3()
         var zp: Float = chunkWorldCorner.z - worldStep
         for (z in 0 until sideCellCount) {
+
             yp = chunkWorldCorner.y - worldStep
             for (y in 0 until sideCellCount) {
 
                 // Check for job cancellation here (not in innermost loop)
-                if (coroutineContext[Job]?.isActive == false) throw CancellationException("Mesh calculation cancelled")
+                if (coroutineContext[Job]?.isActive == false) {
+                    shapeBuilderPool.release(shapeBuilder)
+                    throw CancellationException("Mesh calculation cancelled")
+                }
 
                 xp = chunkWorldCorner.x - worldStep
                 for (x in 0 until sideCellCount) {

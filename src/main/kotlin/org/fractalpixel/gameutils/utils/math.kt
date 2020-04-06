@@ -6,6 +6,8 @@ import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.geometry.int2.Int2
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
+import org.kwrench.geometry.intvolume.IntVolume
+import org.kwrench.geometry.intvolume.MutableIntVolume
 import org.kwrench.geometry.volume.MutableVolume
 import org.kwrench.geometry.volume.Volume
 import org.kwrench.math.max
@@ -15,6 +17,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.sqrt
 
+// TODO: Move all generic extension functions to utility library
 
 fun Double3.distanceTo(x: Double, y: Double, z: Double): Double {
     val dx = x - this.x
@@ -102,10 +105,11 @@ fun MutableInt3.sub(value: Int): MutableInt3 {
  * Wrap this value to the range 0,0,0 .. bounds by applying a mod function.
  * If the result would be negative, the bounds are added to it.
  */
-fun MutableInt3.modPositive(bounds: Int3) {
+fun MutableInt3.modPositive(bounds: Int3): MutableInt3 {
     this.x = this.x.modPositive(bounds.x)
     this.y = this.y.modPositive(bounds.y)
     this.z = this.z.modPositive(bounds.z)
+    return this
 }
 
 
@@ -208,3 +212,101 @@ fun Volume.maximumDistanceToPoint(p: Double3): Double {
     val dz = max(abs(minZ - p.z), abs(p.z - maxZ))
     return sqrt(dx*dx + dy*dy + dz*dz)
 }
+
+/**
+ * Multiply all coordinates with the specified value.
+ * (Updates both position and size)
+ */
+fun MutableIntVolume.mul(value: Int): MutableIntVolume {
+    set(minX*value, minY*value, minZ*value,
+        maxX*value, maxY*value, maxZ*value,
+        empty)
+    return this
+}
+
+/**
+ * Multiply coordinates with the specified values.
+ * (Updates both position and size)
+ */
+fun MutableIntVolume.mul(values: Int3): MutableIntVolume {
+    set(minX*values.x, minY*values.y, minZ*values.z,
+        maxX*values.x, maxY*values.y, maxZ*values.z,
+        empty)
+    return this
+}
+
+/**
+ * Move this volume with the specified amount.
+ */
+fun MutableIntVolume.move(delta: Int3): MutableIntVolume {
+    move(delta.x, delta.y, delta.z)
+    return this
+}
+
+// TODO: Change utility library to return this for operations on volumes too
+
+// TODO: Change utility library to provide static mutable and immutalbe constructor functions in the interfaces for
+//       things like Int3 etc. for easier finding and code completition
+
+
+// TODO: Swap tempPos and visitor for normal foreach too..
+
+/**
+ * Calls the visitor for each coordinate that exists in this volume.
+ * Visited in ascending order, z loops slowest, x fastest.
+ *
+ * Returns true if the visitor returns true for any elements, false otherwise.
+ * If this volume is empty, returns false.
+ */
+inline fun IntVolume.any(tempPos: MutableInt3 = MutableInt3(),
+                         visitor: (Int3) -> Boolean): Boolean {
+    if (!empty) {
+        for (z in minZ .. maxZ) {
+            for (y in minY .. maxY) {
+                for (x in minX .. maxX) {
+                    tempPos.set(x, y, z)
+                    if (visitor(tempPos)) return true
+                }
+            }
+        }
+    }
+
+    return false
+}
+
+/**
+ * Calls the visitor for each coordinate that exists in this volume.
+ * Visited in ascending order, z loops slowest, x fastest.
+ *
+ * Returns true if the visitor returns true for all elements, false otherwise.
+ * If this volume is empty, returns true.
+ */
+inline fun IntVolume.all(tempPos: MutableInt3 = MutableInt3(),
+                         visitor: (Int3) -> Boolean): Boolean {
+    if (!empty) {
+        for (z in minZ .. maxZ) {
+            for (y in minY .. maxY) {
+                for (x in minX .. maxX) {
+                    tempPos.set(x, y, z)
+                    if (!visitor(tempPos)) return false
+                }
+            }
+        }
+    }
+
+    return true
+}
+
+
+/**
+ * Calls the visitor for each coordinate that exists in this volume.
+ * Visited in ascending order, z loops slowest, x fastest.
+ *
+ * Returns true if the visitor returns true for no elements, false otherwise.
+ * If this volume is empty, returns true.
+ */
+inline fun IntVolume.none(tempPos: MutableInt3 = MutableInt3(),
+                          visitor: (Int3) -> Boolean): Boolean =
+    this.all(tempPos) { !visitor(it) }
+
+// TODO: IntVolumes should not be inclusive the end coordinate, better logic if it is exclusive, but it requires major refactoring..

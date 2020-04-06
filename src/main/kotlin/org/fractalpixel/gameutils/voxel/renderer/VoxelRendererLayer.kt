@@ -36,8 +36,11 @@ class VoxelRendererLayer(val terrain: VoxelTerrain,
     })
 
     init {
+        var previousLevel: VoxelDetailLevel? = null
         for (level in voxelConfiguration.detailLevelsRange) {
-            detailLevels.add(VoxelDetailLevel(terrain, level, voxelConfiguration, chunkPool, meshCalculatorPool))
+            val detailLevel = VoxelDetailLevel(terrain, level, voxelConfiguration, chunkPool, meshCalculatorPool, previousLevel)
+            detailLevels.add(detailLevel)
+            previousLevel = detailLevel
         }
     }
 

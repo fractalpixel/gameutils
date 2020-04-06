@@ -34,20 +34,27 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
     // TODO: Add coordinate transformation ops (scale & translate & maybe rotate - should probably be able to take function params.)
 
-    val planetRadius = 10_000.0
-    val mediumAmplitudeNoise = NoiseFun(1.0/1575.12, 10.0).abs().pow(ConstantFun(2.0))
+    val planetRadius = 50_000.0
+    val mediumAmplitudeNoise = NoiseFun(1.0/1975.12, 20.0, seed=23189).abs().pow(ConstantFun(2.0))
     val planetFunction: DistanceFun =
         SphereFun(planetRadius, ImmutableDouble3(0.0, -planetRadius, 0.0)).add(
             NoiseFun(
-                1.0/2131.32, 400.0
+                1.0/2131.32, 400.0, seed=3713
             )
         ).add(
             ModulatedNoiseFun(
-                ConstantFun(1.0 / 113.63), mediumAmplitudeNoise
+                ConstantFun(1.0 / 113.63), mediumAmplitudeNoise, seed=83123
             )
         ).add(
             NoiseFun(
-                1.0/17.14, 3.0
+                1.0/21.2, 5.3
+            ).smoothIntersection(
+                ModulatedNoiseFun(
+                    ConstantFun(1.0/63.31),
+                    NoiseFun(1.0/1117.7, 15.0, 8.0),
+                    seed=8411
+                ),
+                3.0
             )
         )
 
@@ -91,14 +98,16 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         // TODO: Mouse & keyboard controlled camera
         // Rotate camera
         val radius = 5000f
-        val speed = 0.02f
+        var pos = 0f
         world.addSystem { _, time ->
-            cameraPosition.x = (radius * sin(time.secondsSinceStart*0.01)* -cos(speed * time.secondsSinceStart * Tau)).toFloat()
-            cameraPosition.z = (radius * cos(time.secondsSinceStart*0.001)* sin(speed * time.secondsSinceStart * Tau)).toFloat()
-            cameraPosition.y = sin(time.secondsSinceStart*0.003).toFloat() * 100f
+            val speed = 0.01f * ((sin(time.secondsSinceStart*Tau / 30).toFloat() + 0.4f))
+            pos += speed * time.currentStepElapsedSeconds.toFloat()
+            cameraPosition.x = (radius * sin(time.secondsSinceStart*0.01)* -cos(pos * Tau)).toFloat()
+            cameraPosition.z = (radius * cos(time.secondsSinceStart*0.001)* sin(pos * Tau)).toFloat()
+            cameraPosition.y = cos(time.secondsSinceStart*0.03).toFloat() * 100f +50f
 
             lookAt.x = 2000f * -cos(0.001 * time.secondsSinceStart * Tau).toFloat()
-            lookAt.y = 3000f * sin(0.0001 * time.secondsSinceStart * Tau).toFloat()
+            lookAt.y = 500f * sin(0.001 * time.secondsSinceStart * Tau).toFloat() -500f
             lookAt.z = 200f * -sin(0.01 * time.secondsSinceStart * Tau).toFloat()
 
             cameraSystem.set(cameraPosition, lookAt)
@@ -125,7 +134,11 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val pointLight = PointLight()
         pointLight.intensity
 
-        println("Buffer format: " + Gdx.graphics.bufferFormat)
+        // Bump priority of OpenGL thread to the max, to avoid UI freezes while calculation is ongoing in other threads.
+        Thread.currentThread().priority = Thread.MAX_PRIORITY
+
+        // TODO: Remove later?
+        // println("Buffer format: " + Gdx.graphics.bufferFormat)
 
         renderingContext.camera = cameraSystem.camera
     }

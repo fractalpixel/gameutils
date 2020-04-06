@@ -3,6 +3,7 @@ package org.fractalpixel.gameutils.voxel.renderer
 import com.badlogic.gdx.math.Vector3
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.yield
 import org.fractalpixel.gameutils.libgdxutils.set
 import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun
 import org.kwrench.geometry.double3.MutableDouble3
@@ -54,6 +55,7 @@ class CachedDistances(val configuration: VoxelConfiguration) {
         var yp: Double
         var zp: Double = worldCornerPos.z.toDouble() - worldStep
         for (z in 0 until configuration.chunkCornersSize) {
+
             yp = worldCornerPos.y.toDouble() - worldStep
             for (y in 0 until configuration.chunkCornersSize) {
 
@@ -62,11 +64,13 @@ class CachedDistances(val configuration: VoxelConfiguration) {
 
                 xp = worldCornerPos.x.toDouble() - worldStep
                 for (x in 0 until configuration.chunkCornersSize) {
+
                     val d = distanceFun(xp, yp, zp)
-                    distance[index++] = d
 
                     if (d > 0) isSolid = false;
                     if (d <= 0) isAir = false;
+
+                    distance[index++] = d
 
                     xp += worldStep
                 }

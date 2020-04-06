@@ -9,13 +9,9 @@ import org.fractalpixel.gameutils.utils.sub
 import org.kwrench.checking.Check
 import org.kwrench.color.GenColor
 import org.kwrench.color.colorspace.HSLColorSpace
-import org.kwrench.color.colorspace.HSLuvColorSpace
-import org.kwrench.color.colorspace.RGBColorSpace
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
-import org.kwrench.geometry.intvolume.ImmutableIntVolume
-import org.kwrench.geometry.intvolume.IntVolume
 import org.kwrench.geometry.volume.MutableVolume
 import org.kwrench.math.map
 import org.kwrench.math.mix
@@ -31,15 +27,21 @@ import kotlin.math.pow
  *
  * [chunkSize] number of blocks in a chunk along each axis.
  */
+// TODO: More easily configurable resolution settings, from low res potato to high end machine,
+//       in such a way that relevant terrain features are still visible close up, and rough outlines far away.
+//       Probably level size and most detailed level are the ones to tune, as well as detail level count a bit.
+// TODO: Change detail level count to mostRoughDetailLevel or similar instead.
+// TODO: Adaptively adjust chunk size based on performance?  To some degree at least?
 data class VoxelConfiguration(
-    val detailLevelCount: Int = 10,
-    val mostDetailedDetailLevel: Int = -1,
-    val chunkSize: Int = 8,
-    val levelSize: Int = 8,
+    val detailLevelCount: Int = 15,
+    val mostDetailedDetailLevel: Int = -3,
+    val chunkSize: Int = 14,
+    val levelSize: Int = 10,
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
-    val debugLines: Boolean = true,
-    val debugOutLines: Boolean = false,
-    val debugLinesForEmptyBlocks: Boolean = false) {
+    val debugLines: Boolean = false,
+    val debugLinesForEmptyBlocks: Boolean = false,
+    val debugOutlines: Boolean = false,
+    val colorizeTerrainByLevel: Boolean = true) {
 
     // The block corners in a chunk, so one more than blocks in each direction and one extra overlap covering/overlapping gaps.
     val overlap = 1 // Can be 0 (cracks), 1 (overlap in negative direction), or 2 (overlap in both directions).
@@ -128,7 +130,7 @@ data class VoxelConfiguration(
 
         // Align to even chunk coordinates.
         // TODO: Align
-        cornerChunkOut.divide(2).scale(2)
+        cornerChunkOut.divide(2).scale(2).add(Int3.ONES)
         return cornerChunkOut
     }
 
@@ -148,27 +150,13 @@ data class VoxelConfiguration(
 
     val blockEdgeDebugLineColor = Color(0.35f, 0.35f, 0.35f, 0.5f)
 
-    fun calculateBlockLevelDebugColor(level: Int, mayContainSurface: Boolean, hasMesh: Boolean): Color {
-        val hue = mix(relativeLevel(level), 0.15, 0.7)
+    fun calculateBlockLevelDebugColor(
+        level: Int,
+        mayContainSurface: Boolean,
+        hasMesh: Boolean
+    ): Color {
+        var hue = mix(relativeLevel(level), 0.15, 0.7)
         return GenColor(hue, if (mayContainSurface) 0.9 else 0.25, if (hasMesh) 0.8 else if (mayContainSurface) 0.3 else 0.1, 1.0, HSLColorSpace).toColor(GdxColorType)
     }
-
-    //private val holeRange = levelSize/4 until levelSize - levelSize/4
-    private val holeRange = levelSize/4 + 1 until levelSize - levelSize/4 - 1  // Temporary overlap  TODO: Fix
-
-    fun isInLevelHole(level: Int, localPos: Int3): Boolean {
-        return if (level <= mostDetailedDetailLevel) false
-        else {
-            // TODO: Compensate for alignment
-            // TODO: Include overlap between detail levels
-            // TODO: Add hidden border that is being loaded
-            // TODO: Handle missing detailed chunks by using lower detail chunks instead (allow popping in that case)
-            // TODO: write interpolation shader that ignores previous depths(?)
-            localPos.x in holeRange &&
-            localPos.y in holeRange &&
-            localPos.z in holeRange
-        }
-    }
-
 
 }
