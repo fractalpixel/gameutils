@@ -38,11 +38,11 @@ import kotlin.math.sqrt
 data class VoxelConfiguration(
     val detailLevelCount: Int = 15,
     val mostDetailedDetailLevel: Int = -3,
-    val chunkSize: Int = 14,
-    val levelSize: Int = 10,
+    val chunkSize: Int = 16,
+    val levelSize: Int = 12,
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
-    val debugLines: Boolean = true,
-    val debugLinesForEmptyBlocks: Boolean = true,
+    val debugLines: Boolean = false,
+    val debugLinesForEmptyBlocks: Boolean = false,
     val debugOutlines: Boolean = false,
     val colorizeTerrainByLevel: Boolean = true) {
 

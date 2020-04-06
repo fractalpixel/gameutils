@@ -1,13 +1,16 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
+import org.fractalpixel.gameutils.utils.getMaxSideSize
 import org.kwrench.geometry.volume.Volume
+import org.kwrench.math.abs
 import org.kwrench.noise.OpenSimplexNoise
 import org.kwrench.random.Rand
-import kotlin.math.abs
 
 /**
  * Noise based distance function.
  */
+// TODO: A custom 3D noise function that supports exact bounds calculation out of the box, as well as gradient and sample size would be nice and would
+//       probably speed things up considerably.
 class NoiseFun(var scale: Double = 1.0,
                var amplitude: Double = 1.0,
                var offset: Double = 1.0,
@@ -19,18 +22,19 @@ class NoiseFun(var scale: Double = 1.0,
         return noise.noise(x * scale, y * scale, z * scale) * amplitude + offset
     }
 
-    // TODO: If volume is smaller than half scale or so, use gradient decent/climb with a starting point in each corner
-    //  and center for 10 iterations or so (with simulated annealing) to find the min and max values, adding a bit of
-    //  extra margin (and clamping at -1..1 *amplitude+offset).
-    //  This way long-wavelength noise functions can be used without adding a lot of chunks that need to be calculated.
+    override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {
+        if (1.0 / volume.getMaxSideSize() > scale.abs() * 2.0) {
+            // The sampling volume is small compared to the noise scale, so the volume is unlikely to span the whole range of the noise,
+            // so use a gradient decent algorithm to find the local min and max values for the noise
+            this.gradientDecentBoundsSearch(volume, bounds)
+        } else {
+            // The sampling volume spans such a large portion of the noise wave size that it is likely to have both the minimum
+            // and maximum noise value
 
-    override fun getMin(volume: Volume): Double {
-        // Assumes noise is in -1..1 range
-        return -abs(amplitude) + offset
+            // NOTE: Assumes noise function returns values is in the -1 .. 1 range before amplitude scaling.
+            bounds.set(-amplitude.abs() + offset, amplitude.abs() + offset)
+        }
     }
 
-    override fun getMax(volume: Volume): Double {
-        // Assumes noise is in -1..1 range
-        return abs(amplitude) + offset
-    }
+
 }

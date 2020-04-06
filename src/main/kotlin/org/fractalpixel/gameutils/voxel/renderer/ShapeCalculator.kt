@@ -43,7 +43,9 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
         distanceCache.calculate(terrain.distanceFun, pos, level)
 
         // No need to calculate a mesh if all points are inside or outside the terrain
-        if (distanceCache.isSolid || distanceCache.isAir) return null
+        // Exception for if we want to see those empty blocks
+        if ((distanceCache.isSolid || distanceCache.isAir) &&
+            !configuration.debugLinesForEmptyBlocks) return null
 
         // Obtain shape builder
         val shapeBuilder = shapeBuilderPool.obtain()

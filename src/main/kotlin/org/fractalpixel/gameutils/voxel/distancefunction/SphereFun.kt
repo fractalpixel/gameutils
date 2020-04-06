@@ -13,15 +13,16 @@ class SphereFun(var radius: Double = 1.0,
         return center.distanceTo(x, y, z) - radius
     }
 
-    override fun getMin(volume: Volume): Double {
+    override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {
         // Get at shortest distance between sphere center and axis aligned volume,
         // subtract radius to get the  SphereFun value at that distance.
-        return volume.distanceToPoint(center) - radius
-    }
+        val min = volume.distanceToPoint(center) - radius
 
-    override fun getMax(volume: Volume): Double {
         // Get the maximum distance from any point in the volume to the center,
         // subtract radius to get the SphereFun value at that distance.
-        return volume.maximumDistanceToPoint(center) - radius
+        val max = volume.maximumDistanceToPoint(center) - radius
+
+        bounds.set(min, max)
     }
+
 }

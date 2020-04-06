@@ -7,11 +7,7 @@ class ConstantFun(var value: Double = 0.0): DistanceFun {
         return value
     }
 
-    override fun getMin(volume: Volume): Double {
-        return value
-    }
-
-    override fun getMax(volume: Volume): Double {
-        return value
+    override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {
+        bounds.setBothTo(value)
     }
 }

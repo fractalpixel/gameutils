@@ -14,27 +14,27 @@ import org.kwrench.geometry.volume.Volume
  */
 class CombineFun(var a: DistanceFun,
                  var b: DistanceFun,
-                 var aMinSampler: MinMaxSampler = MinMaxSampler.MINIMUM,
-                 var bMinSampler: MinMaxSampler = MinMaxSampler.MINIMUM,
-                 var aMaxSampler: MinMaxSampler = MinMaxSampler.MAXIMUM,
-                 var bMaxSampler: MinMaxSampler = MinMaxSampler.MAXIMUM,
+                 var calculateBounds: (volume: Volume, a: DistanceFun, b: DistanceFun, aMin: Double, aMax: Double, bMin: Double, bMax: Double,  bounds: DistanceBounds) -> Unit = {
+                     volume, a, b, aMin, aMax, bMin, bMax, bounds ->
+                     bounds.set(op(aMin, bMin), op(aMax, bMax))
+                 },
                  var op :(a: Double, b: Double) -> Double): DistanceFun {
 
     override fun invoke(x: Double, y: Double, z: Double): Double {
         return op(a(x, y, z), b(x, y, z))
     }
 
-    override fun getMin(volume: Volume): Double {
-        return op(
-            aMinSampler.calculate(a, volume),
-            bMinSampler.calculate(b, volume)
-        )
+    override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {
+        // Use same bounds instance to get bounds for both a and b
+        a.getBounds(volume, bounds)
+        val aMin = bounds.min
+        val aMax = bounds.max
+
+        b.getBounds(volume, bounds)
+        val bMin = bounds.min
+        val bMax = bounds.max
+
+        calculateBounds(volume, a, b, aMin, aMax, bMin, bMax, bounds)
     }
 
-    override fun getMax(volume: Volume): Double {
-        return op(
-            aMaxSampler.calculate(a, volume),
-            bMaxSampler.calculate(b, volume)
-        )
-    }
 }

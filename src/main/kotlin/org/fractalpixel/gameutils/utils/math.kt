@@ -11,6 +11,7 @@ import org.kwrench.geometry.intvolume.MutableIntVolume
 import org.kwrench.geometry.volume.MutableVolume
 import org.kwrench.geometry.volume.Volume
 import org.kwrench.math.max
+import org.kwrench.math.min
 import org.kwrench.math.modPositive
 import java.lang.IllegalArgumentException
 import kotlin.math.abs
@@ -297,6 +298,52 @@ inline fun IntVolume.all(tempPos: MutableInt3 = MutableInt3(),
     return true
 }
 
+/**
+ * Distance from the minimum point to the maximum point in this volume.
+ */
+fun Volume.diagonalLength(): Double {
+    return if (empty) 0.0
+    else {
+        val dx = sizeX
+        val dy = sizeY
+        val dz = sizeZ
+        sqrt(dx*dx + dy*dy + dz*dz)
+    }
+}
+
+
+
+inline fun Volume.clampXToVolume(x: Double): Double {
+    return when {
+        x < minX -> minX
+        x > maxX -> maxX
+        else -> x
+    }
+}
+
+inline fun Volume.clampYToVolume(y: Double): Double {
+    return when {
+        y < minY -> minY
+        y > maxY -> maxY
+        else -> y
+    }
+}
+
+inline fun Volume.clampZToVolume(z: Double): Double {
+    return when {
+        z < minZ -> minZ
+        z > maxZ -> maxZ
+        else -> z
+    }
+}
+
+inline fun Volume.getMaxSideSize(): Double {
+    return max(sizeX, sizeY, sizeZ)
+}
+
+inline fun Volume.getMinSideSize(): Double {
+    return min(sizeX, sizeY, sizeZ)
+}
 
 /**
  * Calls the visitor for each coordinate that exists in this volume.

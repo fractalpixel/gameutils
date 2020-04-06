@@ -100,7 +100,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val radius = 5000f
         var pos = 0f
         world.addSystem { _, time ->
-            val speed = 0.01f * ((sin(time.secondsSinceStart*Tau / 30).toFloat() + 0.4f))
+            val speed = 10f * ((sin(time.secondsSinceStart*Tau / 30).toFloat() + 0.4f))
             pos += speed * time.currentStepElapsedSeconds.toFloat()
             cameraPosition.x = (radius * sin(time.secondsSinceStart*0.01)* -cos(pos * Tau)).toFloat()
             cameraPosition.z = (radius * cos(time.secondsSinceStart*0.001)* sin(pos * Tau)).toFloat()

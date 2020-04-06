@@ -1,7 +1,6 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
-import org.fractalpixel.gameutils.utils.normalize
-import org.fractalpixel.gameutils.voxel.distancefunction.MinMaxSampler.*
+import org.fractalpixel.gameutils.utils.*
 import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.geometry.volume.Volume
@@ -11,6 +10,7 @@ import org.kwrench.math.mix
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
+import kotlin.math.sqrt
 
 /**
  * A distance function that defines a 3D object.  Render by finding and rendering the isosurface (surface where function returns zero).
@@ -19,7 +19,6 @@ import kotlin.math.pow
 // TODO: Consider optimizing distance functions by having them generate code that is compiled with some on-the-fly compiler
 //       (does e.g. Lua generate compiled and fast bytecode these days?).
 //       This gets rid of a lot of object referencing in a critical path.
-// TODO: Refactor getMin and getMax into a single getBounds or getRange method, (that writes to a Double2? - or perhaps own bounds datatype)
 // TODO: Add sampling scale as parameter, use to smooth noise flat which is too high frequency for sampling scale, and to skip other small features
 interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
 
@@ -39,16 +38,21 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
     override fun invoke(x: Double, y: Double, z: Double): Double
 
     /**
-     * Returns a minimum value for the specified volume.  No value in the volume retrieved with [get] should be smaller than
-     * the returned value.  If a minimum can not be determined, return Double.NEGATIVE_INFINITY.
+     * Get minimum and maximum values for the specified volume, store them in boundsOut, and return it.
+     * If the range can't be determined, return Double.NEGATIVE_INFINITY to Double.POSITIVE_INFINITY
+     *
+     * It is recommended to implement [calculateBounds] instead of overriding [getBounds] in implementations.
      */
-    fun getMin(volume: Volume): Double
+    fun getBounds(volume: Volume, boundsOut: DistanceBounds = DistanceBounds()): DistanceBounds {
+        calculateBounds(volume, boundsOut)
+        return boundsOut
+    }
 
     /**
-     * Returns a maximum value for the specified volume.  No value in the volume retrieved with [get] should be larger than
-     * the returned value.  If a maximum can not be determined, return Double.POSITIVE_INFINITY.
+     * Determine minimum and maximum values for the specified volume and store them in bounds.
+     * If the range can't be determined, use Double.NEGATIVE_INFINITY to Double.POSITIVE_INFINITY
      */
-    fun getMax(volume: Volume): Double
+    fun calculateBounds(volume: Volume, bounds: DistanceBounds)
 
     /**
      * Returns true if the specified volume may contain a surface (intersection of 0 level in the distance function).
@@ -58,8 +62,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      *
      */
     fun mayContainSurface(volume: Volume): Boolean {
-        return getMin(volume) <= 0.0 &&
-               getMax(volume) >= 0.0
+        return getBounds(volume).containsInclusive(0.0)
     }
 
     /**
@@ -78,18 +81,28 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
         CombineFun(
             this,
             other,
-            MINIMUM, MAXIMUM,
-            MAXIMUM, MINIMUM
+            {volume, a, b, aMin, aMax, bMin, bMax, bounds ->
+                bounds.set(aMin - bMax, aMax - bMin)
+            }
         ) { a, b -> a - b }
 
     /**
      * Returns distance function that is this function multiplied with the other function.
      */
-    // TODO: Fix bounds calculation for this one...
     fun mul(other: DistanceFun): DistanceFun =
         CombineFun(
             this,
-            other
+            other,
+            {volume, a, b, aMin, aMax, bMin, bMax, bounds ->
+                // Test all combinations for min and max value, as negative multiplicands complicate logic (maybe this could be optimized?)
+                val v1 = aMin * bMin
+                val v2 = aMax * bMin
+                val v3 = aMin * bMax
+                val v4 = aMax * bMax
+                val min = min(min(v1, v2), min(v3, v4))
+                val max = max(max(v1, v2), max(v3, v4))
+                bounds.set(min, max)
+            }
         ) { a, b -> a * b }
 
 
@@ -108,9 +121,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
     fun difference(other: DistanceFun): DistanceFun =
         CombineFun(
             this,
-            other,
-            MINIMUM, MAXIMUM,
-            MAXIMUM, MINIMUM
+            other
         ) { a, b -> max(a, -b) }
 
     /**
@@ -137,9 +148,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * [smoothness] is given in distance units.
      */
     fun smoothDifference(other: DistanceFun, smoothness: Double): DistanceFun =
-        CombineFun(this, other,
-            MINIMUM, MAXIMUM,
-            MAXIMUM, MINIMUM) { a, b ->
+        CombineFun(this, other) { a, b ->
             val h = (0.5 - 0.5 * (b + a) / smoothness).clamp0To1()
             mix(h, a, -b) + smoothness * h * (1.0 - h)
         }
@@ -175,16 +184,11 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      */
     fun abs(): DistanceFun =
         SingleOpFun(this,
-            calculateMin = {a, volume ->
-                val minValue = a.getMin(volume)
-                val maxValue = a.getMax(volume)
-                if (minValue <= 0.0 && maxValue >= 0.0) 0.0 // Value range crosses zero, so zero is smallest possible value
-                else min(minValue.abs(), maxValue.abs())
-            },
-            calculateMax = {a, volume ->
-                val minValue = a.getMin(volume)
-                val maxValue = a.getMax(volume)
-                max(minValue.abs(), maxValue.abs())
+            calculateBounds = {volume, a, aMin, aMax, bounds ->
+                val min = if (aMin <= 0.0 && aMax >= 0.0) 0.0 // Value range crosses zero, so zero is smallest possible value
+                                 else min(aMin.abs(), aMax.abs())
+                val max = max(aMin.abs(), aMax.abs())
+                bounds.set(min, max)
             }) { f ->
             f.abs()
         }
@@ -210,4 +214,108 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
 
         return normalOut
     }
+
+    /**
+     * Uses gradient decent (and climb) on this function to find some minimum and maximum values within the [volume],
+     * and writes them to the [bounds].  May be inexact, especially if the function is very wobbly, so [extraMargin] is added to the bounds.
+     * Normally starts in each corner and the center, but only in the center if [centerOnly] is set to true.
+     */
+    fun gradientDecentBoundsSearch(volume: Volume, bounds: DistanceBounds = DistanceBounds(), maxSteps: Int = 3, centerOnly: Boolean = false, extraMargin: Double = 0.15): DistanceBounds {
+        var minValue = Double.POSITIVE_INFINITY
+        var maxValue = Double.NEGATIVE_INFINITY
+
+        fun search(findMax: Boolean, startX: Double, startY: Double, startZ: Double, stepSizeMultiplier: Double) {
+            // Scale for adjusting step size with after each iteration.
+            val stepScale = 0.75 // TODO: There's probably an optimal way to determine this..
+
+            // Calculate initial step size
+            var step = (volume.diagonalLength() / maxSteps) * stepSizeMultiplier
+
+            // Flip sign of the step if we are searching for the minimum value instead
+            if (!findMax) step = -step
+
+            // Set starting pos
+            var x = startX
+            var y = startY
+            var z = startZ
+
+            // Sample starting point
+            val startingValue = this(x, y, z)
+            if (startingValue < minValue) minValue = startingValue
+            if (startingValue > maxValue) maxValue = startingValue
+
+            // Sample points, follow gradient in correct direction
+            for (i in 1..maxSteps) {
+                // Sample gradient
+                val dx = this(x + step, y, z) - this(x - step, y, z)
+                val dy = this(x, y + step, z) - this(x, y - step, z)
+                val dz = this(x, y, z + step) - this(x, y, z - step)
+
+                // Check if we are on a flat area, if so there is nothing more to sample.
+                val len = sqrt(dx*dx + dy*dy + dz*dz)
+                if (len <= 0.0) break
+
+                // Move along gradient (normalize gradient, then multiply with step)
+                x += step * dx / len
+                y += step * dy / len
+                z += step * dz / len
+
+                // Clamp movement to the volume
+                x = volume.clampXToVolume(x)
+                y = volume.clampYToVolume(y)
+                z = volume.clampZToVolume(z)
+
+                // Sample new point
+                val value = this(x, y, z)
+                if (value < minValue) minValue = value
+                if (value > maxValue) maxValue = value
+
+                // Reduce step
+                step *= stepScale
+            }
+        }
+
+
+        if (centerOnly) {
+            // Search starting in center
+            search(true, volume.centerX, volume.centerY, volume.centerZ, 1.0)
+            search(false, volume.centerX, volume.centerY, volume.centerZ, 1.0)
+        }
+        else {
+            val stepSizeMultiplier = 0.6
+
+            // Also search from center in this case
+            search(true, volume.centerX, volume.centerY, volume.centerZ, stepSizeMultiplier)
+            search(false, volume.centerX, volume.centerY, volume.centerZ, stepSizeMultiplier)
+
+            // Search starting from each corner
+            search(true, volume.minX, volume.minY, volume.minZ, stepSizeMultiplier)
+            search(false, volume.minX, volume.minY, volume.minZ, stepSizeMultiplier)
+            search(true, volume.maxX, volume.minY, volume.minZ, stepSizeMultiplier)
+            search(false, volume.maxX, volume.minY, volume.minZ, stepSizeMultiplier)
+            search(true, volume.minX, volume.maxY, volume.minZ, stepSizeMultiplier)
+            search(false, volume.minX, volume.maxY, volume.minZ, stepSizeMultiplier)
+            search(true, volume.maxX, volume.maxY, volume.minZ, stepSizeMultiplier)
+            search(false, volume.maxX, volume.maxY, volume.minZ, stepSizeMultiplier)
+            search(true, volume.minX, volume.minY, volume.maxZ, stepSizeMultiplier)
+            search(false, volume.minX, volume.minY, volume.maxZ, stepSizeMultiplier)
+            search(true, volume.maxX, volume.minY, volume.maxZ, stepSizeMultiplier)
+            search(false, volume.maxX, volume.minY, volume.maxZ, stepSizeMultiplier)
+            search(true, volume.minX, volume.maxY, volume.maxZ, stepSizeMultiplier)
+            search(false, volume.minX, volume.maxY, volume.maxZ, stepSizeMultiplier)
+            search(true, volume.maxX, volume.maxY, volume.maxZ, stepSizeMultiplier)
+            search(false, volume.maxX, volume.maxY, volume.maxZ, stepSizeMultiplier)
+        }
+
+        // Expand bounds a bit for error margin, as the real max or min was probably not found
+        val boundsRange = (maxValue - minValue).abs()
+        minValue -= boundsRange * extraMargin
+        maxValue += boundsRange * extraMargin
+
+        // Set results
+        bounds.set(minValue, maxValue)
+        return bounds
+    }
+
 }
+

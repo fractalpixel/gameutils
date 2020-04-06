@@ -27,19 +27,15 @@ class NoisePerturbFun(var distanceFun: DistanceFun,
         return distanceFun(xp, yp, zp)
     }
 
-    override fun getMin(volume: Volume): Double {
-        return distanceFun.getMin(perturbVolume(volume))
-    }
-
-    override fun getMax(volume: Volume): Double {
-        return distanceFun.getMax(perturbVolume(volume))
-    }
-
-    private fun perturbVolume(volume: Volume): MutableVolume {
+    override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {
+        // Create a new volume and scale it to cover the perturbed extent
         // NOTE: Assumes the noise function returns a value in the -1..1 range.
         val perturbedVolume = MutableVolume(volume)
         perturbedVolume.expand(noiseAmplitude)
         perturbedVolume.translate(noiseOffset)
-        return perturbedVolume
+
+        // Get bounds inside the expanded perturbed volume
+        distanceFun.calculateBounds(perturbedVolume, bounds)
     }
+
 }

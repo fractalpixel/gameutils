@@ -1,6 +1,5 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
-import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Mesh
@@ -8,8 +7,6 @@ import com.badlogic.gdx.graphics.g3d.Material
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
-import com.badlogic.gdx.math.Vector3
-import com.badlogic.gdx.math.collision.BoundingBox
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
 import org.fractalpixel.gameutils.libgdxutils.buildWireframeBoxPart
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
@@ -37,7 +34,13 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
     private var initialShape: ShapeBuilder? = null
     private var mesh: Mesh? = null
-    private var modelInstance: ModelInstance? = null
+    var modelInstance: ModelInstance? = null
+
+    /**
+     * True if the model has been created and is rendering.
+     */
+    var initialized: Boolean = false
+        private set
 
     /*
     // Used for frustum culling
@@ -110,6 +113,8 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
             // Release the shape as it was already used to build the mesh and is no longer needed
             releaseShape()
+
+            initialized = true
         }
     }
 
@@ -134,7 +139,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
         // TODO: Avoid calculating this if no debug visualization is on..
         val mayContainSurface = terrain.distanceFun.mayContainSurface(configuration.getChunkVolume(pos, level))
-        val wireframeColor = configuration.calculateBlockLevelDebugColor(level, mayContainSurface, true)
+        val wireframeColor = configuration.calculateBlockLevelDebugColor(level, mayContainSurface, createdMesh.numIndices > 0)
 
         // TODO: (low priority) Add different debug visualization modes later if needed?  Maybe more generic system
 
@@ -186,6 +191,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         releaseShape()
         releaseMesh()
 
+        initialized = false
         terrain = emptyTerrain
         level = 0
         pos.zero()
