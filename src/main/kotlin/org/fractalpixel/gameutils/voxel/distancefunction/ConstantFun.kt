@@ -7,6 +7,16 @@ class ConstantFun(var value: Double = 0.0): DistanceFun {
         return value
     }
 
+    override suspend fun calculateBlock(
+        volume: Volume,
+        block: DepthBlock,
+        blockPool: DepthBlockPool,
+        leadingSeam: Int,
+        trailingSeam: Int
+    ) {
+        block.fill(value)
+    }
+
     override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {
         bounds.setBothTo(value)
     }

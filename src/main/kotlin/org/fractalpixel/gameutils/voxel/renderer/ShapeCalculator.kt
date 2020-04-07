@@ -5,8 +5,10 @@ import kotlinx.coroutines.*
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
 import org.fractalpixel.gameutils.utils.RecyclingPool
 import org.fractalpixel.gameutils.utils.getCoordinate
+import org.fractalpixel.gameutils.utils.isCurrentJobCanceled
 import org.fractalpixel.gameutils.utils.setCoordinate
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
+import org.fractalpixel.gameutils.voxel.distancefunction.DepthBlock
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
@@ -24,7 +26,6 @@ import kotlin.math.abs
 class ShapeCalculator(private val configuration: VoxelConfiguration) {
 
     private val voxelVertexIndexes = ShortArray(configuration.blockCornerCountInChunk) {-1}
-    private val distanceCache = CachedDistances(configuration)
     private val voxelCornerDepths = DoubleArray(8)
     private val voxelCornerPositions = Array<Vector3>(8) { Vector3() }
 
@@ -39,13 +40,21 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
         configuration.getChunkVolume(pos, level, chunkVolume)
         if (!terrain.distanceFun.mayContainSurface(chunkVolume)) return null
 
+        // Obtain a DepthBlock
+        val depthBlock = configuration.depthBlockPool.obtain()
+
         // Calculate distance values over the chunk
-        distanceCache.calculate(terrain.distanceFun, pos, level)
+        terrain.distanceFun.calculateBlock(
+            configuration.getChunkSamplingVolume(pos, level),
+            depthBlock,
+            configuration.depthBlockPool,
+            configuration.leadingSeam,
+            configuration.trailingSeam
+        )
 
         // No need to calculate a mesh if all points are inside or outside the terrain
         // Exception for if we want to see those empty blocks
-        if ((distanceCache.isSolid || distanceCache.isAir) &&
-            !configuration.debugLinesForEmptyBlocks) return null
+        if (!depthBlock.containsSurface() && !configuration.debugLinesForEmptyBlocks) return null
 
         // Obtain shape builder
         val shapeBuilder = shapeBuilderPool.obtain()
@@ -65,14 +74,14 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
         var zp: Float = chunkWorldCorner.z - worldStep
         for (z in 0 until sideCellCount) {
 
+            // Check for job cancellation here (not in innermost loop)
+            if (isCurrentJobCanceled()) {
+                shapeBuilderPool.release(shapeBuilder)
+                throw CancellationException("Mesh calculation cancelled")
+            }
+
             yp = chunkWorldCorner.y - worldStep
             for (y in 0 until sideCellCount) {
-
-                // Check for job cancellation here (not in innermost loop)
-                if (coroutineContext[Job]?.isActive == false) {
-                    shapeBuilderPool.release(shapeBuilder)
-                    throw CancellationException("Mesh calculation cancelled")
-                }
 
                 xp = chunkWorldCorner.x - worldStep
                 for (x in 0 until sideCellCount) {
@@ -81,7 +90,7 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
                     calculateVertexPosition(
                         shapeBuilder,
                         terrain,
-                        distanceCache,
+                        depthBlock,
                         index,
                         voxelPos,
                         xp,
@@ -103,19 +112,22 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
             zp += worldStep
         }
 
+        // Release the depth block
+        configuration.depthBlockPool.release(depthBlock)
+
         return shapeBuilder
     }
 
     private suspend inline fun calculateVertexPosition(
         shapeBuilder: ShapeBuilder,
         terrain: VoxelTerrain,
-        distanceCache: CachedDistances,
+        depthBlock: DepthBlock,
         index: Int,
         voxelPos: Int3,
         xp: Float,
         yp: Float,
         zp: Float,
-        step: Float,
+        worldStep: Float,
         indexStepDelta: Int3,
         tempVec: Vector3,
         tempPos: Vector3,
@@ -129,12 +141,12 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
             for (cy in 0 .. 1) {
                 for (cx in 0 .. 1) {
 
-                    val sample = distanceCache.getSample(voxelPos.x + cx, voxelPos.y + cy, voxelPos.z + cz)
+                    val sample = depthBlock.getSample(voxelPos.x + cx, voxelPos.y + cy, voxelPos.z + cz)
                     voxelCornerDepths[g] = sample
                     voxelCornerPositions[g].set(
-                        xp + cx * step,
-                        yp + cy * step,
-                        zp + cz * step
+                        xp + cx * worldStep,
+                        yp + cy * worldStep,
+                        zp + cz * worldStep
                     )
                     cornerMask = cornerMask or (if (sample > 0) 1 shl g else 0 )
                     g++
@@ -188,13 +200,13 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
 
         // Now we just average the edge intersections and add them to coordinate
         val s = 1f / edgeCrossings
-        tempVec.x = xp + s * step * tempVec.x
-        tempVec.y = yp + s * step * tempVec.y
-        tempVec.z = zp + s * step * tempVec.z
+        tempVec.x = xp + s * worldStep * tempVec.x
+        tempVec.y = yp + s * worldStep * tempVec.y
+        tempVec.z = zp + s * worldStep * tempVec.z
         tempPos.set(tempVec)
 
         // Determine normal
-        distanceCache.getNormal(terrain.distanceFun, tempPos, tempNormal)
+        terrain.distanceFun.getNormal(tempPos, worldStep * 0.5, tempNormal)
 
         // Create vertex for mesh
         val vertexIndex = shapeBuilder.addVertex(tempPos, tempNormal)

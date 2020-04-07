@@ -1,6 +1,6 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
-import org.fractalpixel.gameutils.utils.getMaxSideSize
+import org.fractalpixel.gameutils.utils.*
 import org.kwrench.geometry.volume.Volume
 import org.kwrench.math.abs
 import org.kwrench.noise.OpenSimplexNoise
@@ -14,12 +14,36 @@ import org.kwrench.random.Rand
 class NoiseFun(var scale: Double = 1.0,
                var amplitude: Double = 1.0,
                var offset: Double = 1.0,
-               val seed: Long = Rand.default.nextLong()) : DistanceFun {
+               val seed: Long = Rand.default.nextLong(),
+               var optimizationThreshold: Double = 0.001) : DistanceFun {
 
     val noise = OpenSimplexNoise(seed)
 
     override fun invoke(x: Double, y: Double, z: Double): Double {
         return noise.noise(x * scale, y * scale, z * scale) * amplitude + offset
+    }
+
+    override suspend fun calculateBlock(
+        volume: Volume,
+        block: DepthBlock,
+        blockPool: DepthBlockPool,
+        leadingSeam: Int,
+        trailingSeam: Int
+    ) {
+        checkForJobCancellation()
+
+        // Check if the sampling volume is small compared to the feature size
+        val volumeSize = volume.getMaxSideSize()
+        if (volumeSize * scale < optimizationThreshold) {
+            // Linearly interpolate values sampled at corners
+            calculateBlockWithInterpolation(volume, block, blockPool, leadingSeam, trailingSeam)
+        }
+        else {
+            // Fill block with the noise function
+            block.fillUsingCoordinates(volume) {_, x, y, z ->
+                noise.noise(x * scale, y * scale, z * scale) * amplitude + offset
+            }
+        }
     }
 
     override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {

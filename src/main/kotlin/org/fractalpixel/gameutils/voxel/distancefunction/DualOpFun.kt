@@ -1,5 +1,6 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
+import org.fractalpixel.gameutils.utils.checkForJobCancellation
 import org.kwrench.geometry.volume.Volume
 
 /**
@@ -12,16 +13,51 @@ import org.kwrench.geometry.volume.Volume
  * but for cases like subtraction they are different (minimum of combination a - b happens when a is sampled with minimum
  * and b is sampled with maximum).
  */
-class CombineFun(var a: DistanceFun,
-                 var b: DistanceFun,
-                 var calculateBounds: (volume: Volume, a: DistanceFun, b: DistanceFun, aMin: Double, aMax: Double, bMin: Double, bMax: Double,  bounds: DistanceBounds) -> Unit = {
+class DualOpFun(var a: DistanceFun,
+                var b: DistanceFun,
+                inline var calculateBounds: (volume: Volume, a: DistanceFun, b: DistanceFun, aMin: Double, aMax: Double, bMin: Double, bMax: Double,  bounds: DistanceBounds) -> Unit = {
                      volume, a, b, aMin, aMax, bMin, bMax, bounds ->
                      bounds.set(op(aMin, bMin), op(aMax, bMax))
                  },
-                 var op :(a: Double, b: Double) -> Double): DistanceFun {
+                inline var op :(a: Double, b: Double) -> Double): DistanceFun {
 
     override fun invoke(x: Double, y: Double, z: Double): Double {
         return op(a(x, y, z), b(x, y, z))
+    }
+
+    override suspend fun calculateBlock(
+        volume: Volume,
+        block: DepthBlock,
+        blockPool: DepthBlockPool,
+        leadingSeam: Int,
+        trailingSeam: Int
+    ) {
+        checkForJobCancellation()
+
+        // Calculate input a, use the given block
+        a.calculateBlock(volume, block, blockPool, leadingSeam, trailingSeam)
+
+        checkForJobCancellation()
+
+        // Reserve separate block for results of b
+        val bBlock = blockPool.obtain()
+        try {
+            // Calculate input b
+            b.calculateBlock(volume, bBlock, blockPool, leadingSeam, trailingSeam)
+
+            checkForJobCancellation()
+
+            // Apply operation to each value
+            val depths = block.depths
+            val bDepths = bBlock.depths
+            for (i in depths.indices) {
+                depths[i] = op(depths[i], bDepths[i])
+            }
+        }
+        finally {
+            // Release temporary block
+            blockPool.release(bBlock)
+        }
     }
 
     override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {

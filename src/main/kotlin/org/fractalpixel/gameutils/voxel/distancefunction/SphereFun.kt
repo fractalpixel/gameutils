@@ -1,16 +1,43 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
-import org.fractalpixel.gameutils.utils.distanceTo
-import org.fractalpixel.gameutils.utils.distanceToPoint
-import org.fractalpixel.gameutils.utils.maximumDistanceToPoint
+import org.fractalpixel.gameutils.utils.*
 import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.volume.Volume
 
+/**
+ * Set [optimizationThreshold] to 0.0 if no optimization of the shape should be done.
+ */
 class SphereFun(var radius: Double = 1.0,
-                var center: Double3 = Double3.ZEROES): DistanceFun {
+                var center: Double3 = Double3.ZEROES,
+                var optimizationThreshold: Double = 0.001): DistanceFun {
 
     override fun invoke(x: Double, y: Double, z: Double): Double {
         return center.distanceTo(x, y, z) - radius
+    }
+
+    override suspend fun calculateBlock(
+        volume: Volume,
+        block: DepthBlock,
+        blockPool: DepthBlockPool,
+        leadingSeam: Int,
+        trailingSeam: Int
+    ) {
+        checkForJobCancellation()
+
+        // If we are far enough from the sphere center, and small enough volume, we can interpolate corners
+        // instead of calculating the distance to the center.  Probably not very notable difference in this case thou
+        val volumeSize = volume.getMaxSideSize()
+        val distanceToCenter = volume.distanceToPoint(center)
+        if (distanceToCenter > 0.0 && volumeSize / distanceToCenter < optimizationThreshold) {
+            // Linearly interpolate values sampled at corners
+            calculateBlockWithInterpolation(volume, block, blockPool, leadingSeam, trailingSeam)
+        }
+        else {
+            // Fill block with the sphere function
+            block.fillUsingCoordinates(volume) {_, x, y, z ->
+                center.distanceTo(x, y, z) - radius
+            }
+        }
     }
 
     override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {

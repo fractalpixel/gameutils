@@ -1,5 +1,6 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
+import org.fractalpixel.gameutils.utils.getMaxSideSize
 import org.fractalpixel.gameutils.utils.translate
 import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.volume.MutableVolume
@@ -25,6 +26,17 @@ class NoisePerturbFun(var distanceFun: DistanceFun,
         val yp = y + noiseY.noise(x * noiseScale.x, y * noiseScale.y, z * noiseScale.z) * noiseAmplitude.y + noiseOffset.y
         val zp = z + noiseZ.noise(x * noiseScale.x, y * noiseScale.y, z * noiseScale.z) * noiseAmplitude.z + noiseOffset.z
         return distanceFun(xp, yp, zp)
+    }
+
+    override suspend fun calculateBlock(
+        volume: Volume,
+        block: DepthBlock,
+        blockPool: DepthBlockPool,
+        leadingSeam: Int,
+        trailingSeam: Int
+    ) {
+        // The perturbation breaks this optimization, so we need to sample individual points
+        calculateBlockUsingSamples(volume, block, blockPool)
     }
 
     override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {

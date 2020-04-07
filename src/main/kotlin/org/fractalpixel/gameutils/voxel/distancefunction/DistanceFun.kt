@@ -1,12 +1,12 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
+import com.badlogic.gdx.math.Vector3
 import org.fractalpixel.gameutils.utils.*
 import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.geometry.volume.Volume
 import org.kwrench.math.abs
 import org.kwrench.math.clamp0To1
-import org.kwrench.math.mix
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -20,6 +20,7 @@ import kotlin.math.sqrt
 //       (does e.g. Lua generate compiled and fast bytecode these days?).
 //       This gets rid of a lot of object referencing in a critical path.
 // TODO: Add sampling scale as parameter, use to smooth noise flat which is too high frequency for sampling scale, and to skip other small features
+// TODO: Calculate all depths in a volume to an array, use that to fetch distance data for a chunk -> faster!
 interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
 
     /**
@@ -36,6 +37,81 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * Returns distance to the surface from the specified point, negative if the point is inside the object.
      */
     override fun invoke(x: Double, y: Double, z: Double): Double
+
+    /**
+     * Calculates distances for all points in the [block] of the specified extent
+     * (the [volume] includes the position in the world).
+     *
+     * The block pool is supplied as well, for acquiring temporary blocks when intermediate results need to be stored.
+     *
+     * This function is suspending, implementations should check if the current co-routine has been canceled if they
+     * have long-running calculations using e.g. [checkForJobCancellation].
+     *
+     * Speed optimizations are allowed and recommended even if they slightly deviate from the directly calculated values.
+     */
+    suspend fun calculateBlock(volume: Volume, block: DepthBlock, blockPool: DepthBlockPool, leadingSeam: Int = 0, trailingSeam: Int = 0) /*{
+        // TODO: Remove later?
+        calculateBlockUsingSamples(volume, block, blockPool)
+
+        // DEBUG
+//        calculateBlockWithInterpolation(volume, block, blockPool, leadingSeam, trailingSeam)
+    }*/
+
+    /**
+     * Calculate the block by sampling this function at each point.
+     */
+    suspend fun calculateBlockUsingSamples(volume: Volume, block: DepthBlock, blockPool: DepthBlockPool) {
+        checkForJobCancellation()
+
+        block.fillUsingCoordinates(volume) { index, x, y, z ->
+            invoke(x, y, z)
+        }
+    }
+
+    /**
+     * Samples this function for the corner values of the specified [volume] and fill the [block] with interpolated values.
+     * The seams specify the positions that the samples have been taken at, relative to the leading and trailing
+     * edges of the block.
+     */
+    suspend fun calculateBlockWithInterpolation(volume: Volume, block: DepthBlock, blockPool: DepthBlockPool, leadingSeam: Int = 0, trailingSeam: Int = 0) {
+        // Check if we are canceled
+        checkForJobCancellation()
+
+        val samplingStepX = volume.sizeX / (block.size.x - 1)
+        val samplingStepY = volume.sizeY / (block.size.y - 1)
+        val samplingStepZ = volume.sizeZ / (block.size.z - 1)
+
+        val leadX = -samplingStepX * leadingSeam
+        val leadY = -samplingStepY * leadingSeam
+        val leadZ = -samplingStepZ * leadingSeam
+        val trailX = -samplingStepX * trailingSeam
+        val trailY = -samplingStepY * trailingSeam
+        val trailZ = -samplingStepZ * trailingSeam
+
+        // Sample corners, minus seams
+        val x1y1z1 = invoke(volume.minX - leadX, volume.minY - leadY, volume.minZ - leadZ)
+        val x2y1z1 = invoke(volume.maxX + trailX, volume.minY - leadY, volume.minZ - leadZ)
+        val x1y2z1 = invoke(volume.minX - leadX, volume.maxY + trailY, volume.minZ - leadZ)
+        val x2y2z1 = invoke(volume.maxX + trailX, volume.maxY + trailY, volume.minZ - leadZ)
+        val x1y1z2 = invoke(volume.minX - leadX, volume.minY - leadY, volume.maxZ + trailZ)
+        val x2y1z2 = invoke(volume.maxX + trailX, volume.minY - leadY, volume.maxZ + trailZ)
+        val x1y2z2 = invoke(volume.minX - leadX, volume.maxY + trailY, volume.maxZ + trailZ)
+        val x2y2z2 = invoke(volume.maxX + trailX, volume.maxY + trailY, volume.maxZ + trailZ)
+
+        // Interpolate between the corners
+        block.fillWithInterpolated(
+            x1y1z1,
+            x2y1z1,
+            x1y2z1,
+            x2y2z1,
+            x1y1z2,
+            x2y1z2,
+            x1y2z2,
+            x2y2z2,
+            leadingSeam,
+            trailingSeam
+        )
+    }
 
     /**
      * Get minimum and maximum values for the specified volume, store them in boundsOut, and return it.
@@ -69,7 +145,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * Returns distance function that is this function added to the other function.
      */
     fun add(other: DistanceFun): DistanceFun =
-        CombineFun(
+        DualOpFun(
             this,
             other
         ) { a, b -> a + b }
@@ -78,7 +154,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * Returns distance function that is this function with the other subtracted from it.
      */
     fun subtract(other: DistanceFun): DistanceFun =
-        CombineFun(
+        DualOpFun(
             this,
             other,
             {volume, a, b, aMin, aMax, bMin, bMax, bounds ->
@@ -90,7 +166,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * Returns distance function that is this function multiplied with the other function.
      */
     fun mul(other: DistanceFun): DistanceFun =
-        CombineFun(
+        DualOpFun(
             this,
             other,
             {volume, a, b, aMin, aMax, bMin, bMax, bounds ->
@@ -110,7 +186,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * Union of this object and the other.
      */
     fun union(other: DistanceFun): DistanceFun =
-        CombineFun(
+        DualOpFun(
             this,
             other
         ) { a, b -> min(a, b) }
@@ -119,7 +195,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * Remove the other object from this.
      */
     fun difference(other: DistanceFun): DistanceFun =
-        CombineFun(
+        DualOpFun(
             this,
             other
         ) { a, b -> max(a, -b) }
@@ -128,7 +204,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * Intersection of this and the other object,
      */
     fun intersection(other: DistanceFun): DistanceFun =
-        CombineFun(
+        DualOpFun(
             this,
             other
         ) { a, b -> max(a, b) }
@@ -138,9 +214,9 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * [smoothness] is given in distance units.
      */
     fun smoothUnion(other: DistanceFun, smoothness: Double): DistanceFun =
-        CombineFun(this, other) { a, b ->
+        DualOpFun(this, other) { a, b ->
             val h = (0.5 + 0.5 * (b - a) / smoothness).clamp0To1()
-            mix(h, b, a) - smoothness * h * (1.0 - h)
+            fastMix(h, b, a) - smoothness * h * (1.0 - h)
         }
 
     /**
@@ -148,9 +224,9 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * [smoothness] is given in distance units.
      */
     fun smoothDifference(other: DistanceFun, smoothness: Double): DistanceFun =
-        CombineFun(this, other) { a, b ->
+        DualOpFun(this, other) { a, b ->
             val h = (0.5 - 0.5 * (b + a) / smoothness).clamp0To1()
-            mix(h, a, -b) + smoothness * h * (1.0 - h)
+            fastMix(h, a, -b) + smoothness * h * (1.0 - h)
         }
 
     /**
@@ -158,9 +234,9 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * [smoothness] is given in distance units.
      */
     fun smoothIntersection(other: DistanceFun, smoothness: Double): DistanceFun =
-        CombineFun(this, other) { a, b ->
+        DualOpFun(this, other) { a, b ->
             val h = (0.5 - 0.5 * (b - a) / smoothness).clamp0To1()
-            mix(h, b, a) + smoothness * h * (1.0 - h)
+            fastMix(h, b, a) + smoothness * h * (1.0 - h)
         }
 
     /**
@@ -175,7 +251,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * for this reason this function is clamped to 0 if it is less than zero.
      */
     fun pow(exponent: DistanceFun): DistanceFun =
-        CombineFun(this, exponent) { a, b ->
+        DualOpFun(this, exponent) { a, b ->
             if (a <= 0.0) 0.0 else a.pow(b)
         }
 
@@ -192,6 +268,12 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
             }) { f ->
             f.abs()
         }
+
+    // TODO: Add mix between two functions using a third to select.
+    // TODO: More generally, use some criteria to select 'ecotype', and apply function for that ecotype,
+    //       with smooth transitions.  Might include some data from outside, e.g. height that is used in all ecotypes.
+    //       Ecotypes might require a higher abstraction layer that also addresses materials and entity instance generation.
+    // TODO: Custom function that is used to create features at some random locations using a density function
 
     /**
      * Calculate normal at the specified [pos].
@@ -216,11 +298,36 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
     }
 
     /**
+     * Calculate normal at the specified [pos] using libGdx Vector3 classes.
+     * Use the specified [samplingScale] for the normal calculation, normally the positions around the point are sampled
+     * at the specified [samplingScale] in each direction to determine the normal, but implementations may also use
+     * other methods.
+     * The normal is stored in [normalOut], and it is returned.
+     */
+    fun getNormal(pos: Vector3, samplingScale: Double, normalOut: Vector3 = Vector3()): Vector3 {
+        // Sample points around pos
+        val mx = invoke(pos.x.toDouble() - samplingScale, pos.y.toDouble(), pos.z.toDouble())
+        val px = invoke(pos.x.toDouble() + samplingScale, pos.y.toDouble(), pos.z.toDouble())
+        val my = invoke(pos.x.toDouble(), pos.y.toDouble() - samplingScale, pos.z.toDouble())
+        val py = invoke(pos.x.toDouble(), pos.y.toDouble() + samplingScale, pos.z.toDouble())
+        val mz = invoke(pos.x.toDouble(), pos.y.toDouble(), pos.z.toDouble() - samplingScale)
+        val pz = invoke(pos.x.toDouble(), pos.y.toDouble(), pos.z.toDouble() + samplingScale)
+
+        // Calculate normal by comparing samples on both sides of the position along each axis, and normalizing the result
+        normalOut.set(
+            (px - mx).toFloat(),
+            (py - my).toFloat(),
+            (pz - mz).toFloat()).nor()
+
+        return normalOut
+    }
+
+    /**
      * Uses gradient decent (and climb) on this function to find some minimum and maximum values within the [volume],
      * and writes them to the [bounds].  May be inexact, especially if the function is very wobbly, so [extraMargin] is added to the bounds.
      * Normally starts in each corner and the center, but only in the center if [centerOnly] is set to true.
      */
-    fun gradientDecentBoundsSearch(volume: Volume, bounds: DistanceBounds = DistanceBounds(), maxSteps: Int = 3, centerOnly: Boolean = false, extraMargin: Double = 0.15): DistanceBounds {
+    fun gradientDecentBoundsSearch(volume: Volume, bounds: DistanceBounds = DistanceBounds(), maxSteps: Int = 3, centerOnly: Boolean = false, extraMargin: Double = 0.15, volumeMargin: Double = 0.1): DistanceBounds {
         var minValue = Double.POSITIVE_INFINITY
         var maxValue = Double.NEGATIVE_INFINITY
 
@@ -321,9 +428,11 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
         }
 
         // Expand bounds a bit for error margin, as the real max or min was probably not found
-        val boundsRange = (maxValue - minValue).abs()
-        minValue -= boundsRange * extraMargin
-        maxValue += boundsRange * extraMargin
+        val boundsMargin = (maxValue - minValue).abs() * extraMargin
+        val volumeMargin = volume.getMaxSideSize() * volumeMargin
+        val margin = boundsMargin + volumeMargin
+        minValue -= margin
+        maxValue += margin
 
         // Set results
         bounds.set(minValue, maxValue)

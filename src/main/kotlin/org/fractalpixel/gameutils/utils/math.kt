@@ -4,15 +4,14 @@ import com.badlogic.gdx.math.Vector3
 import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.geometry.int2.Int2
+import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
 import org.kwrench.geometry.intvolume.IntVolume
 import org.kwrench.geometry.intvolume.MutableIntVolume
 import org.kwrench.geometry.volume.MutableVolume
 import org.kwrench.geometry.volume.Volume
-import org.kwrench.math.max
-import org.kwrench.math.min
-import org.kwrench.math.modPositive
+import org.kwrench.math.*
 import java.lang.IllegalArgumentException
 import kotlin.math.abs
 import kotlin.math.max
@@ -357,3 +356,18 @@ inline fun IntVolume.none(tempPos: MutableInt3 = MutableInt3(),
     this.all(tempPos) { !visitor(it) }
 
 // TODO: IntVolumes should not be inclusive the end coordinate, better logic if it is exclusive, but it requires major refactoring..
+
+// TODO: Add immutable to Int3 and similar, return new Immutable for mutables, and self for immutables
+inline val Int3.immutable: ImmutableInt3 get() {
+    return this as? ImmutableInt3 ?: ImmutableInt3(this)
+}
+
+
+// TODO: Inline mix in MathUtils too..
+
+/**
+ * Interpolate between the start and end values (and beyond).  Does not perform any clamping or smoothing.
+ * @param t 0 corresponds to start, 1 to end.
+ * @return interpolated value
+ */
+inline fun fastMix(t: Double, start: Double, end: Double): Double = start + t * (end - start)

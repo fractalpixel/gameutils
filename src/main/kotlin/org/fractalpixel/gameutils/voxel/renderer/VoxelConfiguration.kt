@@ -8,6 +8,7 @@ import org.fractalpixel.gameutils.libgdxutils.set
 import org.fractalpixel.gameutils.libgdxutils.setWithScaleAddAndFloor
 import org.fractalpixel.gameutils.utils.iterate
 import org.fractalpixel.gameutils.utils.sub
+import org.fractalpixel.gameutils.voxel.distancefunction.DepthBlockPool
 import org.kwrench.checking.Check
 import org.kwrench.color.GenColor
 import org.kwrench.color.colorspace.HSLColorSpace
@@ -27,6 +28,9 @@ import kotlin.math.sqrt
  * tuned depending on performance or detail requirements respectively.
  *
  * Also contains functions for doing most of the tricky coordinate math for voxel blocks, chunks and detail levels.
+ *
+ * Also holds (some of) the object pools used when rendering a voxel landscape, so this is not a lightweight object.
+ * // TODO: is there need to move the pools to a separate object, that might be created on demand by the configuration?
  *
  * [chunkSize] number of blocks in a chunk along each axis.
  */
@@ -49,6 +53,8 @@ data class VoxelConfiguration(
     // The block corners in a chunk, so one more than blocks in each direction and one extra overlap covering/overlapping gaps.
     val overlap = 1 // Can be 0 (cracks), 1 (overlap in negative direction), or 2 (overlap in both directions).
     val chunkCornersSize = chunkSize + 1 + overlap
+    val leadingSeam = 1
+    val trailingSeam = overlap -1
     val blockCornerCountInChunk = chunkCornersSize * chunkCornersSize * chunkCornersSize
 
     init {
@@ -62,6 +68,10 @@ data class VoxelConfiguration(
     val levelExtent = ImmutableInt3(levelSize, levelSize, levelSize)
     val chunkExtent = ImmutableInt3(chunkSize, chunkSize, chunkSize)
     val chunkCornersExtent = ImmutableInt3(chunkCornersSize, chunkCornersSize, chunkCornersSize)
+
+    // TODO: If / when we make chunk size modifiable on the fly, update it here too.
+    val depthBlockPool = DepthBlockPool(chunkCornersExtent)
+
 
     fun blockWorldSize(level: Int): Double = baseDetailLevelBlockSizeMeters * 2.0.pow(level)
     fun chunkWorldSize(level: Int): Double = blockWorldSize(level) * chunkSize
@@ -93,6 +103,34 @@ data class VoxelConfiguration(
             x1 + chunkWorldSize,
             y1 + chunkWorldSize,
             z1 + chunkWorldSize)
+
+        return volumeOut
+    }
+
+    /**
+     * Returns the volume that the distance function is sampled for the specified chunk.
+     * This is larger than the chunkVolume, as some area around the edges of the chunk needs to be sampled to create
+     * a smooth, seamless surface.
+     */
+    fun getChunkSamplingVolume(chunkPos: Int3, level: Int, volumeOut: MutableVolume = MutableVolume()): MutableVolume {
+
+        val blockWorldSize = blockWorldSize(level)
+        val chunkWorldSize = blockWorldSize * chunkSize
+        val chunkSamplingAreaSize = blockWorldSize * chunkCornersSize - blockWorldSize // TODO: This extra -blockWorldSize implies there's a one-off assumption somewhere, clear it out.
+
+        // First corner
+        val x1 = chunkPos.x * chunkWorldSize - blockWorldSize
+        val y1 = chunkPos.y * chunkWorldSize - blockWorldSize
+        val z1 = chunkPos.z * chunkWorldSize - blockWorldSize
+
+        // Extend from corner
+        volumeOut.set(
+            x1,
+            y1,
+            z1,
+            x1 + chunkSamplingAreaSize,
+            y1 + chunkSamplingAreaSize,
+            z1 + chunkSamplingAreaSize)
 
         return volumeOut
     }
