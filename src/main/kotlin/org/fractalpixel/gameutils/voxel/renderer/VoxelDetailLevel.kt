@@ -18,7 +18,7 @@ import org.kwrench.geometry.intvolume.MutableIntVolume
  * Holds all voxel chunks at a specific detail level.
  */
 // TODO: Have extra non-visible layer in each direction, where the chunks are being asynchronously loaded,
-//       so that when they get into view, most/all are already loaded.
+//       so that when they get into view, most/all are already loaded.  -- this might be already handled with the odd-overlap alignment
 class VoxelDetailLevel(
     val terrain: VoxelTerrain,
     val level: Int,
@@ -53,10 +53,6 @@ class VoxelDetailLevel(
                 }
             }
         }) { pos ->
-
-        // TODO: At large level sizes, the bottleneck is probably the number of chunks.
-        //       Consider if this could be optimized, or if chunks could be null if empty - that would require the
-        //       calculation to be done before obtaining a chunk from the chunk pool, perhaps this PanBuffer could contain chunk futures?
 
         // Need to copy this, as it is used in async method
         val p = MutableInt3(pos)

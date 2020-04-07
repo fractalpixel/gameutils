@@ -152,7 +152,7 @@ data class VoxelConfiguration(
         cornerChunkOut.sub(levelSize / 2)
 
         // Align to even chunk coordinates.
-        // TODO: Align
+        // TODO: Align - does this skew the position sideways?
         cornerChunkOut.divide(2).scale(2).add(Int3.ONES)
         return cornerChunkOut
     }

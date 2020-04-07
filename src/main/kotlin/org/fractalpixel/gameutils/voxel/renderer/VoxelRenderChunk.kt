@@ -90,8 +90,8 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         }
     }
 
-    /* TODO: Frustrum culling doesn't seem to work correctly in LibGDX, keeps flickering between frames.
-             Might have to implement it ourselves?
+    /* TODO: Frustrum culling doesn't seem to work correctly, keeps flickering between frames.
+             Might have to implement it ourselves?  Or is the problem misaligned chunks?  But bounding box is based on actual geometry..
     /**
      * Returns true if this chunk would be visible to the camera.
      */

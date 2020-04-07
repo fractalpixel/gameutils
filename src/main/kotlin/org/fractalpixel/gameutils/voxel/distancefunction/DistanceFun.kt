@@ -239,6 +239,11 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
             var y = startY
             var z = startZ
 
+            // Keep track of previous position
+            var prevX = x
+            var prevY = y
+            var prevZ = z
+
             // Sample starting point
             val startingValue = this(x, y, z)
             if (startingValue < minValue) minValue = startingValue
@@ -265,6 +270,9 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
                 y = volume.clampYToVolume(y)
                 z = volume.clampZToVolume(z)
 
+                // If we did not move (typically because the gradient points towards a corner) we can skip the rest of the steps.
+                if (x == prevX && y == prevY && z == prevZ) break
+
                 // Sample new point
                 val value = this(x, y, z)
                 if (value < minValue) minValue = value
@@ -272,6 +280,11 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
 
                 // Reduce step
                 step *= stepScale
+
+                // Update previous position
+                prevX = x
+                prevY = y
+                prevZ = z
             }
         }
 
