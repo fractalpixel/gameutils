@@ -62,6 +62,20 @@ open class RecyclingPool<T: Any>(
     }
 
     /**
+     * Obtains a new object from this pool, will use any recycled objects if available, or create a new instance if not,
+     * then pass it to the provided block, and release it after the block ends (even if it ends with an exception).
+     */
+    inline fun <S>withObtained(block: (T) -> S): S {
+        val resource = obtain()
+        try {
+            return block(resource)
+        }
+        finally {
+            release(resource)
+        }
+    }
+
+    /**
      * Disposes all stored recyclables.
      * This would typically be called when the pool is no longer in use, e.g. at program termination, to free allocated
      * resources, but it can also be used in other situations to temporary remove stored objects.

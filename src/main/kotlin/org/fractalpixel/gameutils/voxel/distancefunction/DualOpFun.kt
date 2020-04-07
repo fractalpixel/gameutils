@@ -39,9 +39,9 @@ class DualOpFun(var a: DistanceFun,
 
         checkForJobCancellation()
 
-        // Reserve separate block for results of b
-        val bBlock = blockPool.obtain()
-        try {
+        // Reserve separate block for results of b and release it when done
+        blockPool.withObtained { bBlock ->
+
             // Calculate input b
             b.calculateBlock(volume, bBlock, blockPool, leadingSeam, trailingSeam)
 
@@ -53,10 +53,6 @@ class DualOpFun(var a: DistanceFun,
             for (i in depths.indices) {
                 depths[i] = op(depths[i], bDepths[i])
             }
-        }
-        finally {
-            // Release temporary block
-            blockPool.release(bBlock)
         }
     }
 

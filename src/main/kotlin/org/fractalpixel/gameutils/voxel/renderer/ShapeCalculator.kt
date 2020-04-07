@@ -41,81 +41,81 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
         if (!terrain.distanceFun.mayContainSurface(chunkVolume)) return null
 
         // Obtain a DepthBlock
-        val depthBlock = configuration.depthBlockPool.obtain()
+        configuration.depthBlockPool.withObtained {
+            // The depth block will be automatically released when this block exits
+            val depthBlock = it
 
-        // Calculate distance values over the chunk
-        terrain.distanceFun.calculateBlock(
-            configuration.getChunkSamplingVolume(pos, level),
-            depthBlock,
-            configuration.depthBlockPool,
-            configuration.leadingSeam,
-            configuration.trailingSeam
-        )
+            // Calculate distance values over the chunk
+            terrain.distanceFun.calculateBlock(
+                configuration.getChunkSamplingVolume(pos, level),
+                depthBlock,
+                configuration.depthBlockPool,
+                configuration.leadingSeam,
+                configuration.trailingSeam
+            )
 
-        // No need to calculate a mesh if all points are inside or outside the terrain
-        // Exception for if we want to see those empty blocks
-        if (!depthBlock.containsSurface() && !configuration.debugLinesForEmptyBlocks) return null
+            // No need to calculate a mesh if all points are inside or outside the terrain
+            // Exception for if we want to see those empty blocks
+            if (!depthBlock.containsSurface() && !configuration.debugLinesForEmptyBlocks) return null
 
-        // Obtain shape builder
-        val shapeBuilder = shapeBuilderPool.obtain()
+            // Obtain shape builder
+            val shapeBuilder = shapeBuilderPool.obtain()
 
-        // Iterate voxel space
-        val sideCellCount = configuration.chunkCornersSize - 1
-        val indexStepDelta = ImmutableInt3(1, sideCellCount, (sideCellCount) * (sideCellCount))
-        val chunkWorldCorner = configuration.chunkWorldCornerPos(pos, level)
-        val worldStep = configuration.blockWorldSize(level).toFloat()
-        var xp: Float
-        var yp: Float
-        var index = 0
-        val voxelPos = MutableInt3()
-        val tempVec = Vector3() // Create these temporary values outside the loop to avoid memory trashing
-        val tempPos = Vector3()
-        val tempNormal = Vector3()
-        var zp: Float = chunkWorldCorner.z - worldStep
-        for (z in 0 until sideCellCount) {
+            // Iterate voxel space
+            val sideCellCount = configuration.chunkCornersSize - 1
+            val indexStepDelta = ImmutableInt3(1, sideCellCount, (sideCellCount) * (sideCellCount))
+            val chunkWorldCorner = configuration.chunkWorldCornerPos(pos, level)
+            val worldStep = configuration.blockWorldSize(level).toFloat()
+            var xp: Float
+            var yp: Float
+            var index = 0
+            val voxelPos = MutableInt3()
+            val tempVec = Vector3() // Create these temporary values outside the loop to avoid memory trashing
+            val tempPos = Vector3()
+            val tempNormal = Vector3()
+            var zp: Float = chunkWorldCorner.z - worldStep
+            for (z in 0 until sideCellCount) {
 
-            // Check for job cancellation here (not in innermost loop)
-            if (isCurrentJobCanceled()) {
-                shapeBuilderPool.release(shapeBuilder)
-                throw CancellationException("Mesh calculation cancelled")
-            }
-
-            yp = chunkWorldCorner.y - worldStep
-            for (y in 0 until sideCellCount) {
-
-                xp = chunkWorldCorner.x - worldStep
-                for (x in 0 until sideCellCount) {
-
-                    voxelPos.set(x, y, z)
-                    calculateVertexPosition(
-                        shapeBuilder,
-                        terrain,
-                        depthBlock,
-                        index,
-                        voxelPos,
-                        xp,
-                        yp,
-                        zp,
-                        worldStep,
-                        indexStepDelta,
-                        tempVec,
-                        tempPos,
-                        tempNormal
-                    )
-
-                    index++
-
-                    xp += worldStep
+                // Check for job cancellation here (not in innermost loop)
+                if (isCurrentJobCanceled()) {
+                    shapeBuilderPool.release(shapeBuilder)
+                    throw CancellationException("Mesh calculation cancelled")
                 }
-                yp += worldStep
+
+                yp = chunkWorldCorner.y - worldStep
+                for (y in 0 until sideCellCount) {
+
+                    xp = chunkWorldCorner.x - worldStep
+                    for (x in 0 until sideCellCount) {
+
+                        voxelPos.set(x, y, z)
+                        calculateVertexPosition(
+                            shapeBuilder,
+                            terrain,
+                            depthBlock,
+                            index,
+                            voxelPos,
+                            xp,
+                            yp,
+                            zp,
+                            worldStep,
+                            indexStepDelta,
+                            tempVec,
+                            tempPos,
+                            tempNormal
+                        )
+
+                        index++
+
+                        xp += worldStep
+                    }
+                    yp += worldStep
+                }
+                zp += worldStep
             }
-            zp += worldStep
+
+            return shapeBuilder
         }
-
-        // Release the depth block
-        configuration.depthBlockPool.release(depthBlock)
-
-        return shapeBuilder
     }
 
     private suspend inline fun calculateVertexPosition(
