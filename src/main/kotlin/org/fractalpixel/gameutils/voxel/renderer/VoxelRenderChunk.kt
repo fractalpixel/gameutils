@@ -138,7 +138,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         var debugColor = Color.WHITE
 
         // TODO: Avoid calculating this if no debug visualization is on..
-        val mayContainSurface = terrain.distanceFun.mayContainSurface(configuration.getChunkVolume(pos, level))
+        val mayContainSurface = terrain.distanceFun.mayContainSurface(configuration.getChunkVolume(pos, level), configuration.blockWorldSize(level))
         val wireframeColor = configuration.calculateBlockLevelDebugColor(level, mayContainSurface, createdMesh.numIndices > 0)
 
         // TODO: (low priority) Add different debug visualization modes later if needed?  Maybe more generic system

@@ -15,14 +15,14 @@ import org.kwrench.geometry.volume.Volume
  */
 class DualOpFun(var a: DistanceFun,
                 var b: DistanceFun,
-                inline var calculateBounds: (volume: Volume, a: DistanceFun, b: DistanceFun, aMin: Double, aMax: Double, bMin: Double, bMax: Double,  bounds: DistanceBounds) -> Unit = {
-                     volume, a, b, aMin, aMax, bMin, bMax, bounds ->
+                inline var calculateBounds: (volume: Volume, sampleSize: Double, a: DistanceFun, b: DistanceFun, aMin: Double, aMax: Double, bMin: Double, bMax: Double,  bounds: DistanceBounds) -> Unit = {
+                     volume, sampleSize, a, b, aMin, aMax, bMin, bMax, bounds ->
                      bounds.set(op(aMin, bMin), op(aMax, bMax))
                  },
                 inline var op :(a: Double, b: Double) -> Double): DistanceFun {
 
-    override fun invoke(x: Double, y: Double, z: Double): Double {
-        return op(a(x, y, z), b(x, y, z))
+    override fun get(x: Double, y: Double, z: Double, sampleSize: Double): Double {
+        return op(a.get(x, y, z, sampleSize), b.get(x, y, z, sampleSize))
     }
 
     override suspend fun calculateBlock(
@@ -56,17 +56,17 @@ class DualOpFun(var a: DistanceFun,
         }
     }
 
-    override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {
+    override fun calculateBounds(volume: Volume, sampleSize: Double, bounds: DistanceBounds) {
         // Use same bounds instance to get bounds for both a and b
-        a.getBounds(volume, bounds)
+        a.getBounds(volume, sampleSize, bounds)
         val aMin = bounds.min
         val aMax = bounds.max
 
-        b.getBounds(volume, bounds)
+        b.getBounds(volume, sampleSize, bounds)
         val bMin = bounds.min
         val bMax = bounds.max
 
-        calculateBounds(volume, a, b, aMin, aMax, bMin, bMax, bounds)
+        calculateBounds(volume, sampleSize, a, b, aMin, aMax, bMin, bMax, bounds)
     }
 
 }

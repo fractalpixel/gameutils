@@ -371,3 +371,24 @@ inline val Int3.immutable: ImmutableInt3 get() {
  * @return interpolated value
  */
 inline fun fastMix(t: Double, start: Double, end: Double): Double = start + t * (end - start)
+
+
+/**
+ * The largest of x, y or z.
+ */
+inline fun Int3.maxCoordinate(): Int = max(x, y, z)
+
+/**
+ * The smallest of x, y or z.
+ */
+inline fun Int3.minCoordinate(): Int = min(x, y, z)
+
+/**
+ * The largest of x, y or z.
+ */
+inline fun Double3.maxCoordinate(): Double = max(x, y, z)
+
+/**
+ * The smallest of x, y or z.
+ */
+inline fun Double3.minCoordinate(): Double = min(x, y, z)

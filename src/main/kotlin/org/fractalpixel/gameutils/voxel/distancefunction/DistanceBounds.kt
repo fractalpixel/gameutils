@@ -1,5 +1,10 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
+import org.kwrench.math.abs
+import org.kwrench.math.min
+import kotlin.math.max
+import kotlin.math.min
+
 /**
  * Holds bounds for a distance function,
  * one estimate for the smallest distance and one for the largest.
@@ -69,5 +74,15 @@ data class DistanceBounds(var min: Double = 0.0,
      * True if the value is in the bounds (inclusive max value)
      */
     fun containsInclusive(v: Double): Boolean = v in min..max
+
+    /**
+     * Largest absolute value in the bounds.
+     */
+    fun maxAbsoluteValue(): Double = max(min.abs(), max.abs())
+
+    /**
+     * Smallest absolute value in the bounds (if they intersect 0, it is 0).
+     */
+    fun minAbsoluteValue(): Double = if (contains(0.0)) 0.0 else min(min.abs(), max.abs())
 
 }

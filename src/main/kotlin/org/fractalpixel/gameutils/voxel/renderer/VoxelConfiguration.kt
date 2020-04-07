@@ -42,8 +42,8 @@ import kotlin.math.sqrt
 data class VoxelConfiguration(
     val detailLevelCount: Int = 15,
     val mostDetailedDetailLevel: Int = -3,
-    val chunkSize: Int = 16,
-    val levelSize: Int = 12,
+    val chunkSize: Int = 24,
+    val levelSize: Int = 8,
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
     val debugLines: Boolean = false,
     val debugLinesForEmptyBlocks: Boolean = false,

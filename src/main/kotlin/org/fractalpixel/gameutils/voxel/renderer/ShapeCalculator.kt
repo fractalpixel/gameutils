@@ -9,6 +9,7 @@ import org.fractalpixel.gameutils.utils.isCurrentJobCanceled
 import org.fractalpixel.gameutils.utils.setCoordinate
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
 import org.fractalpixel.gameutils.voxel.distancefunction.DepthBlock
+import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
@@ -34,11 +35,13 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
      * Returns null if the chunk does not have any surfaces (completely solid or air).
      */
     suspend fun buildShape(terrain: VoxelTerrain, pos: Int3, level: Int): ShapeBuilder? {
+        val worldStep = configuration.blockWorldSize(level).toFloat()
+
         // Determine if the chunk is all empty or solid using min and max bounds for the volume,
         // for quick skipping of chunks without content.
         val chunkVolume = MutableVolume()
         configuration.getChunkVolume(pos, level, chunkVolume)
-        if (!terrain.distanceFun.mayContainSurface(chunkVolume)) return null
+        if (!terrain.distanceFun.mayContainSurface(chunkVolume, worldStep.toDouble())) return null
 
         // Obtain a DepthBlock
         configuration.depthBlockPool.withObtained {
@@ -65,7 +68,6 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
             val sideCellCount = configuration.chunkCornersSize - 1
             val indexStepDelta = ImmutableInt3(1, sideCellCount, (sideCellCount) * (sideCellCount))
             val chunkWorldCorner = configuration.chunkWorldCornerPos(pos, level)
-            val worldStep = configuration.blockWorldSize(level).toFloat()
             var xp: Float
             var yp: Float
             var index = 0
@@ -206,7 +208,7 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
         tempPos.set(tempVec)
 
         // Determine normal
-        terrain.distanceFun.getNormal(tempPos, worldStep * 0.5, tempNormal)
+        terrain.distanceFun.getNormal(tempPos, worldStep.toDouble(), tempNormal)
 
         // Create vertex for mesh
         val vertexIndex = shapeBuilder.addVertex(tempPos, tempNormal)

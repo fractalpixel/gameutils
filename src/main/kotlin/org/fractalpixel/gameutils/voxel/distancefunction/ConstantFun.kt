@@ -3,7 +3,7 @@ package org.fractalpixel.gameutils.voxel.distancefunction
 import org.kwrench.geometry.volume.Volume
 
 class ConstantFun(var value: Double = 0.0): DistanceFun {
-    override fun invoke(x: Double, y: Double, z: Double): Double {
+    override fun get(x: Double, y: Double, z: Double, sampleSize: Double): Double {
         return value
     }
 
@@ -17,7 +17,7 @@ class ConstantFun(var value: Double = 0.0): DistanceFun {
         block.fill(value)
     }
 
-    override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {
+    override fun calculateBounds(volume: Volume, sampleSize: Double, bounds: DistanceBounds) {
         bounds.setBothTo(value)
     }
 }

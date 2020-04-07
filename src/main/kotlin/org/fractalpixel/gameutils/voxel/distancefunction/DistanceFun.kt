@@ -21,22 +21,25 @@ import kotlin.math.sqrt
 //       This gets rid of a lot of object referencing in a critical path.
 // TODO: Add sampling scale as parameter, use to smooth noise flat which is too high frequency for sampling scale, and to skip other small features
 // TODO: Calculate all depths in a volume to an array, use that to fetch distance data for a chunk -> faster!
-interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
+interface DistanceFun {
 
     /**
      * Returns distance to the surface from the specified point, negative if the point is inside the object.
+     *
+     * [sampleSize] determine the diameter of an imaginary sphere used for sampling, the returned value should
+     * (ideally) be the (possibly weighted) average of the values inside that sphere.  This allows removing too
+     * fine details that would cause aliasing.  A value of 0 for the sample size returns the exact value at the position.
      */
-    operator fun get(pos: Double3): Double = invoke(pos.x, pos.y, pos.z)
+    operator fun get(pos: Double3, sampleSize: Double): Double = get(pos.x, pos.y, pos.z, sampleSize) //  = 0.0
 
     /**
      * Returns distance to the surface from the specified point, negative if the point is inside the object.
+     *
+     * [sampleSize] determine the diameter of an imaginary sphere used for sampling, the returned value should
+     * (ideally) be the (possibly weighted) average of the values inside that sphere.  This allows removing too
+     * fine details that would cause aliasing.  A value of 0 for the sample size returns the exact value at the position.
      */
-    override fun invoke(pos: Double3): Double  = invoke(pos.x, pos.y, pos.z)
-
-    /**
-     * Returns distance to the surface from the specified point, negative if the point is inside the object.
-     */
-    override fun invoke(x: Double, y: Double, z: Double): Double
+    operator fun get(x: Double, y: Double, z: Double, sampleSize: Double): Double  //  = 0.0
 
     /**
      * Calculates distances for all points in the [block] of the specified extent
@@ -48,6 +51,8 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * have long-running calculations using e.g. [checkForJobCancellation].
      *
      * Speed optimizations are allowed and recommended even if they slightly deviate from the directly calculated values.
+     *
+     * The sample size is the (smallest) volume side size divided by the (largest) block side size
      */
     suspend fun calculateBlock(volume: Volume, block: DepthBlock, blockPool: DepthBlockPool, leadingSeam: Int = 0, trailingSeam: Int = 0) /*{
         // TODO: Remove later?
@@ -63,10 +68,13 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
     suspend fun calculateBlockUsingSamples(volume: Volume, block: DepthBlock, blockPool: DepthBlockPool) {
         checkForJobCancellation()
 
-        block.fillUsingCoordinates(volume) { index, x, y, z ->
-            invoke(x, y, z)
+        val sampleSize = calculateSampleSize(volume, block)
+
+        block.fillUsingCoordinates(volume) { _, x, y, z ->
+            get(x, y, z, sampleSize)
         }
     }
+
 
     /**
      * Samples this function for the corner values of the specified [volume] and fill the [block] with interpolated values.
@@ -74,8 +82,9 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * edges of the block.
      */
     suspend fun calculateBlockWithInterpolation(volume: Volume, block: DepthBlock, blockPool: DepthBlockPool, leadingSeam: Int = 0, trailingSeam: Int = 0) {
-        // Check if we are canceled
         checkForJobCancellation()
+
+        val sampleSize = calculateSampleSize(volume, block)
 
         val samplingStepX = volume.sizeX / (block.size.x - 1)
         val samplingStepY = volume.sizeY / (block.size.y - 1)
@@ -89,14 +98,14 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
         val trailZ = -samplingStepZ * trailingSeam
 
         // Sample corners, minus seams
-        val x1y1z1 = invoke(volume.minX - leadX, volume.minY - leadY, volume.minZ - leadZ)
-        val x2y1z1 = invoke(volume.maxX + trailX, volume.minY - leadY, volume.minZ - leadZ)
-        val x1y2z1 = invoke(volume.minX - leadX, volume.maxY + trailY, volume.minZ - leadZ)
-        val x2y2z1 = invoke(volume.maxX + trailX, volume.maxY + trailY, volume.minZ - leadZ)
-        val x1y1z2 = invoke(volume.minX - leadX, volume.minY - leadY, volume.maxZ + trailZ)
-        val x2y1z2 = invoke(volume.maxX + trailX, volume.minY - leadY, volume.maxZ + trailZ)
-        val x1y2z2 = invoke(volume.minX - leadX, volume.maxY + trailY, volume.maxZ + trailZ)
-        val x2y2z2 = invoke(volume.maxX + trailX, volume.maxY + trailY, volume.maxZ + trailZ)
+        val x1y1z1 = get(volume.minX - leadX, volume.minY - leadY, volume.minZ - leadZ, sampleSize)
+        val x2y1z1 = get(volume.maxX + trailX, volume.minY - leadY, volume.minZ - leadZ, sampleSize)
+        val x1y2z1 = get(volume.minX - leadX, volume.maxY + trailY, volume.minZ - leadZ, sampleSize)
+        val x2y2z1 = get(volume.maxX + trailX, volume.maxY + trailY, volume.minZ - leadZ, sampleSize)
+        val x1y1z2 = get(volume.minX - leadX, volume.minY - leadY, volume.maxZ + trailZ, sampleSize)
+        val x2y1z2 = get(volume.maxX + trailX, volume.minY - leadY, volume.maxZ + trailZ, sampleSize)
+        val x1y2z2 = get(volume.minX - leadX, volume.maxY + trailY, volume.maxZ + trailZ, sampleSize)
+        val x2y2z2 = get(volume.maxX + trailX, volume.maxY + trailY, volume.maxZ + trailZ, sampleSize)
 
         // Interpolate between the corners
         block.fillWithInterpolated(
@@ -119,8 +128,8 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      *
      * It is recommended to implement [calculateBounds] instead of overriding [getBounds] in implementations.
      */
-    fun getBounds(volume: Volume, boundsOut: DistanceBounds = DistanceBounds()): DistanceBounds {
-        calculateBounds(volume, boundsOut)
+    fun getBounds(volume: Volume, sampleSize: Double, boundsOut: DistanceBounds = DistanceBounds()): DistanceBounds {
+        calculateBounds(volume,  sampleSize, boundsOut)
         return boundsOut
     }
 
@@ -128,7 +137,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * Determine minimum and maximum values for the specified volume and store them in bounds.
      * If the range can't be determined, use Double.NEGATIVE_INFINITY to Double.POSITIVE_INFINITY
      */
-    fun calculateBounds(volume: Volume, bounds: DistanceBounds)
+    fun calculateBounds(volume: Volume, sampleSize: Double, bounds: DistanceBounds)
 
     /**
      * Returns true if the specified volume may contain a surface (intersection of 0 level in the distance function).
@@ -137,8 +146,8 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * Uses min & max bounds for the volume for a quick check to speed up calculations or collision detection.
      *
      */
-    fun mayContainSurface(volume: Volume): Boolean {
-        return getBounds(volume).containsInclusive(0.0)
+    fun mayContainSurface(volume: Volume, sampleSize: Double): Boolean {
+        return getBounds(volume, sampleSize).containsInclusive(0.0)
     }
 
     /**
@@ -157,7 +166,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
         DualOpFun(
             this,
             other,
-            {volume, a, b, aMin, aMax, bMin, bMax, bounds ->
+            {volume, sampleSize, a, b, aMin, aMax, bMin, bMax, bounds ->
                 bounds.set(aMin - bMax, aMax - bMin)
             }
         ) { a, b -> a - b }
@@ -169,7 +178,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
         DualOpFun(
             this,
             other,
-            {volume, a, b, aMin, aMax, bMin, bMax, bounds ->
+            {volume, sampleSize, a, b, aMin, aMax, bMin, bMax, bounds ->
                 // Test all combinations for min and max value, as negative multiplicands complicate logic (maybe this could be optimized?)
                 val v1 = aMin * bMin
                 val v2 = aMax * bMin
@@ -260,7 +269,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      */
     fun abs(): DistanceFun =
         SingleOpFun(this,
-            calculateBounds = {volume, a, aMin, aMax, bounds ->
+            calculateBounds = {volume, sampleSize, a, aMin, aMax, bounds ->
                 val min = if (aMin <= 0.0 && aMax >= 0.0) 0.0 // Value range crosses zero, so zero is smallest possible value
                                  else min(aMin.abs(), aMax.abs())
                 val max = max(aMin.abs(), aMax.abs())
@@ -277,19 +286,27 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
 
     /**
      * Calculate normal at the specified [pos].
-     * Use the specified [samplingScale] for the normal calculation, normally the positions around the point are sampled
-     * at the specified [samplingScale] in each direction to determine the normal, but implementations may also use
+     *
+     * Use the specified [sampleSize] for the normal calculation, normally the positions around the point are sampled
+     * at the specified half sampleSize in each direction to determine the normal, but implementations may also use
      * other methods.
+     *
      * The normal is stored in [normalOut], and it is returned.
      */
-    fun getNormal(pos: Double3, samplingScale: Double, normalOut: MutableDouble3 = MutableDouble3()): MutableDouble3 {
-        // Use normalOut as temporary sampling position, so that we do not need to create a new Double3 instance
-        val mx = get(normalOut.set(pos).add(-samplingScale, 0.0, 0.0))
-        val px = get(normalOut.set(pos).add(+samplingScale, 0.0, 0.0))
-        val my = get(normalOut.set(pos).add(0.0, -samplingScale, 0.0))
-        val py = get(normalOut.set(pos).add(0.0, +samplingScale, 0.0))
-        val mz = get(normalOut.set(pos).add(0.0, 0.0, -samplingScale))
-        val pz = get(normalOut.set(pos).add(0.0, 0.0, +samplingScale))
+    fun getNormal(pos: Double3, sampleSize: Double, normalOut: MutableDouble3 = MutableDouble3()): MutableDouble3 {
+
+        val sampleStep = sampleSize * 0.5
+
+        // Sample points around pos
+        val x = pos.x
+        val y = pos.y
+        val z = pos.z
+        val mx = get(x - sampleStep, y, z, sampleSize)
+        val px = get(x + sampleStep, y, z, sampleSize)
+        val my = get(x, y - sampleStep, z, sampleSize)
+        val py = get(x, y + sampleStep, z, sampleSize)
+        val mz = get(x, y, z - sampleStep, sampleSize)
+        val pz = get(x, y, z + sampleStep, sampleSize)
 
         // Calculate normal by comparing samples on both sides of the position along each axis, and normalizing the result
         normalOut.set(px-mx, py-my, pz-mz).normalize()
@@ -299,19 +316,27 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
 
     /**
      * Calculate normal at the specified [pos] using libGdx Vector3 classes.
-     * Use the specified [samplingScale] for the normal calculation, normally the positions around the point are sampled
-     * at the specified [samplingScale] in each direction to determine the normal, but implementations may also use
+     *
+     * Use the specified [sampleSize] for the normal calculation, normally the positions around the point are sampled
+     * at the specified half sampleSize in each direction to determine the normal, but implementations may also use
      * other methods.
+     *
      * The normal is stored in [normalOut], and it is returned.
      */
-    fun getNormal(pos: Vector3, samplingScale: Double, normalOut: Vector3 = Vector3()): Vector3 {
+    fun getNormal(pos: Vector3, sampleSize: Double, normalOut: Vector3 = Vector3()): Vector3 {
+
+        val sampleStep = sampleSize * 0.5
+
         // Sample points around pos
-        val mx = invoke(pos.x.toDouble() - samplingScale, pos.y.toDouble(), pos.z.toDouble())
-        val px = invoke(pos.x.toDouble() + samplingScale, pos.y.toDouble(), pos.z.toDouble())
-        val my = invoke(pos.x.toDouble(), pos.y.toDouble() - samplingScale, pos.z.toDouble())
-        val py = invoke(pos.x.toDouble(), pos.y.toDouble() + samplingScale, pos.z.toDouble())
-        val mz = invoke(pos.x.toDouble(), pos.y.toDouble(), pos.z.toDouble() - samplingScale)
-        val pz = invoke(pos.x.toDouble(), pos.y.toDouble(), pos.z.toDouble() + samplingScale)
+        val x = pos.x.toDouble()
+        val y = pos.y.toDouble()
+        val z = pos.z.toDouble()
+        val mx = get(x - sampleStep, y, z, sampleSize)
+        val px = get(x + sampleStep, y, z, sampleSize)
+        val my = get(x, y - sampleStep, z, sampleSize)
+        val py = get(x, y + sampleStep, z, sampleSize)
+        val mz = get(x, y, z - sampleStep, sampleSize)
+        val pz = get(x, y, z + sampleStep, sampleSize)
 
         // Calculate normal by comparing samples on both sides of the position along each axis, and normalizing the result
         normalOut.set(
@@ -327,7 +352,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
      * and writes them to the [bounds].  May be inexact, especially if the function is very wobbly, so [extraMargin] is added to the bounds.
      * Normally starts in each corner and the center, but only in the center if [centerOnly] is set to true.
      */
-    fun gradientDecentBoundsSearch(volume: Volume, bounds: DistanceBounds = DistanceBounds(), maxSteps: Int = 3, centerOnly: Boolean = false, extraMargin: Double = 0.15, volumeMargin: Double = 0.1): DistanceBounds {
+    fun gradientDecentBoundsSearch(volume: Volume, sampleSize: Double, bounds: DistanceBounds = DistanceBounds(), maxSteps: Int = 3, centerOnly: Boolean = false, extraMargin: Double = 0.15, volumeMargin: Double = 0.1): DistanceBounds {
         var minValue = Double.POSITIVE_INFINITY
         var maxValue = Double.NEGATIVE_INFINITY
 
@@ -352,16 +377,16 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
             var prevZ = z
 
             // Sample starting point
-            val startingValue = this(x, y, z)
+            val startingValue = get(x, y, z, sampleSize)
             if (startingValue < minValue) minValue = startingValue
             if (startingValue > maxValue) maxValue = startingValue
 
             // Sample points, follow gradient in correct direction
             for (i in 1..maxSteps) {
                 // Sample gradient
-                val dx = this(x + step, y, z) - this(x - step, y, z)
-                val dy = this(x, y + step, z) - this(x, y - step, z)
-                val dz = this(x, y, z + step) - this(x, y, z - step)
+                val dx = get(x + step, y, z, sampleSize) - get(x - step, y, z, sampleSize)
+                val dy = get(x, y + step, z, sampleSize) - get(x, y - step, z, sampleSize)
+                val dz = get(x, y, z + step, sampleSize) - get(x, y, z - step, sampleSize)
 
                 // Check if we are on a flat area, if so there is nothing more to sample.
                 val len = sqrt(dx*dx + dy*dy + dz*dz)
@@ -381,7 +406,7 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
                 if (x == prevX && y == prevY && z == prevZ) break
 
                 // Sample new point
-                val value = this(x, y, z)
+                val value = get(x, y, z, sampleSize)
                 if (value < minValue) minValue = value
                 if (value > maxValue) maxValue = value
 
@@ -439,5 +464,93 @@ interface DistanceFun: (Double3) -> Double, (Double, Double, Double) -> Double {
         return bounds
     }
 
+    companion object {
+        /**
+         * Sample size to use when sampling the specified volume for the specified block.
+         */
+        fun calculateSampleSize(volume: Volume, block: DepthBlock): Double {
+            // Use minimum volume side and max coordinate side to err on the side of more detailed over less detailed.
+            val volumeSideSize = volume.getMinSideSize()
+            val samplesPerVolumeSide = block.size.maxCoordinate()
+            return volumeSideSize / samplesPerVolumeSide
+        }
+
+        /**
+         * Anti-aliases features with a known [featureSize] given the specified [sampleSize].
+         * Returns a specified [average] value if the feature size is too small for the sampling size,
+         * and the actual [feature] if the sampling size is small enough to capture the feature, and
+         * blends between the two when the feature size starts to get too small.
+         */
+        inline fun antiAliasFeatures(sampleSize: Double, featureSize: Double, average: () -> Double, feature: () -> Double): Double {
+            val blend = featureBlend(sampleSize, featureSize)
+            return when {
+                blend <= 0.0 -> average()
+                blend >= 1.0 -> feature()
+                else -> {
+                    val a = average()
+                    val f = feature()
+                    fastMix(blend, a, f)
+                }
+            }
+        }
+
+        /**
+         * Anti-aliases features with a known feature size given the specified [sampleSize].
+         * Returns a specified [average] value if the feature size is too small for the sampling size,
+         * and the actual [feature] if the sampling size is small enough to capture the feature, and
+         * blends between the two when the feature size starts to get too small.
+         *
+         * Takes the coordiante scaling of features as parameter instead of size of features, size is calculated as 1 / scale.
+         * If the [featureScale] is zero, the feature is returned.
+         * The absolute value of the featureScale is used, so negative scalings will work correctly.
+         */
+        inline fun antiAliasFeaturesUsingScale(sampleSize: Double, featureScale: Double, average: () -> Double, feature: () -> Double): Double {
+            val blend = featureBlendUsingScale(sampleSize, featureScale)
+            return when {
+                blend <= 0.0 -> average()
+                blend >= 1.0 -> feature()
+                else -> {
+                    val a = average()
+                    val f = feature()
+                    fastMix(blend, a, f)
+                }
+            }
+        }
+
+        /**
+         * Returns amount of features to preserve.  As the sample size grows larger than the feature size, this
+         * goes from one towards zero.
+         * At 1, the features should be used as-is, at 0, the average or similar value should be used instead of
+         * the exact features, to avoid aliasing.
+         */
+        inline fun featureBlend(sampleSize: Double, featureSize: Double): Double {
+            val noFadeRatio = 3.0 // At this many samples per feature it is still acceptably visible
+            val fadeOutRatio = 1.0 // Nyquist rate is 2, at that point there is information loss about the waveform
+
+            if (sampleSize <= 0) return 1.0 // Requested exact values
+
+            val ratio = featureSize.abs() / sampleSize
+            return when {
+                ratio >= noFadeRatio -> 1.0 // Sample size is small enough to more or less sample features
+                ratio <= fadeOutRatio -> 0.0 // Sample size is too large to capture features correctly
+                else -> (ratio - fadeOutRatio) / (noFadeRatio - fadeOutRatio) // Fade between 1 and 0 as ratio goes from hight to low.
+            }
+        }
+
+        /**
+         * Returns amount of features to preserve.  As the sample size grows larger than the feature size, this
+         * goes from one towards zero.
+         * At 1, the features should be used as-is, at 0, the average or similar value should be used instead of
+         * the exact features, to avoid aliasing.
+         *
+         * Takes the coordiante scaling of features as parameter instead of size of features, size is calculated as 1 / scale.
+         * If the featureScale is zero, 1 is returned.  The absolute value of the featureScale is used, so negative scalings will work correctly.
+         */
+        inline fun featureBlendUsingScale(sampleSize: Double, featureScale: Double): Double {
+            val scale = featureScale.abs()
+            return if (scale <= 0.0) 1.0
+            else featureBlend(sampleSize, 1.0 / scale)
+        }
+    }
 }
 

@@ -11,7 +11,7 @@ class SphereFun(var radius: Double = 1.0,
                 var center: Double3 = Double3.ZEROES,
                 var optimizationThreshold: Double = 0.001): DistanceFun {
 
-    override fun invoke(x: Double, y: Double, z: Double): Double {
+    override fun get(x: Double, y: Double, z: Double, sampleSize: Double): Double {
         return center.distanceTo(x, y, z) - radius
     }
 
@@ -40,7 +40,7 @@ class SphereFun(var radius: Double = 1.0,
         }
     }
 
-    override fun calculateBounds(volume: Volume, bounds: DistanceBounds) {
+    override fun calculateBounds(volume: Volume, sampleSize: Double, bounds: DistanceBounds) {
         // Get at shortest distance between sphere center and axis aligned volume,
         // subtract radius to get the  SphereFun value at that distance.
         val min = volume.distanceToPoint(center) - radius
