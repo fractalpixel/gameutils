@@ -111,7 +111,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
             //val speed = 1f * ((sin(time.secondsSinceStart*Tau / 30).toFloat() + 0.4f))
             cameraPosition.x = speed * (radius * sin(time.secondsSinceStart*0.037) + radius * -cos(-0.082* time.secondsSinceStart)).toFloat()
             cameraPosition.z = speed * (radius * cos(time.secondsSinceStart*0.043) + radius * sin(-0.113 * time.secondsSinceStart)).toFloat()
-            cameraPosition.y = speed * cos(time.secondsSinceStart*0.037).toFloat() * 300f + 50f
+            cameraPosition.y = speed * cos(time.secondsSinceStart*0.037).toFloat() * 300f + 100f
 
             lookAt.x = 2000f * -cos(0.0011 * time.secondsSinceStart * Tau).toFloat()
             lookAt.y = 500f * sin(0.0019 * time.secondsSinceStart * Tau).toFloat() -500f
