@@ -106,7 +106,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         // TODO: Mouse & keyboard controlled camera
         // Rotate camera
         val radius = 10000f
-        val speed = 0.05f
+        val speed = 0.035f
         world.addSystem { _, time ->
             //val speed = 1f * ((sin(time.secondsSinceStart*Tau / 30).toFloat() + 0.4f))
             cameraPosition.x = speed * (radius * sin(time.secondsSinceStart*0.037) + radius * -cos(-0.082* time.secondsSinceStart)).toFloat()
