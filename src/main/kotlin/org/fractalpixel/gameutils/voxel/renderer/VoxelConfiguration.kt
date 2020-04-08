@@ -42,8 +42,8 @@ import kotlin.math.sqrt
 data class VoxelConfiguration(
     val detailLevelCount: Int = 15,
     val mostDetailedDetailLevel: Int = -3,
-    val chunkSize: Int = 24,
-    val levelSize: Int = 8,
+    val chunkSize: Int = 20,
+    val levelSize: Int = 8, // TODO: Lot of overlapping layers rendered with low values..
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
     val debugLines: Boolean = false,
     val debugLinesForEmptyBlocks: Boolean = false,
@@ -152,7 +152,7 @@ data class VoxelConfiguration(
             worldCornerPos.x + halfSize,
             worldCornerPos.y + halfSize,
             worldCornerPos.z + halfSize)
-        return halfSize * 2f // Overestimate a bit, chunk might extend outside?  This didn't work: sqrt(halfSize*halfSize + halfSize*halfSize + halfSize*halfSize).toFloat()
+        return halfSize * 3f // Overestimate, chunk might extend outside?  This didn't work: sqrt(halfSize*halfSize + halfSize*halfSize + halfSize*halfSize).toFloat()
     }
 
     inline fun iterateLevel(cornerChunkPos: Int3, iteratingInt3: MutableInt3 = MutableInt3(), code: (chunkPos: Int3, chunkIndex: Int) -> Unit) {

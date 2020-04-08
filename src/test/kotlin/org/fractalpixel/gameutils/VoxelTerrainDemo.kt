@@ -34,7 +34,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
     // TODO: Add coordinate transformation ops (scale & translate & maybe rotate - should probably be able to take function params.)
 
-    val planetRadius = 50_000.0
+    val planetRadius = 40_000.0
     val mediumAmplitudeNoise = NoiseFun(1.0/1975.12, 20.0, seed=23189).abs().pow(ConstantFun(2.0))
     val planetFunction: DistanceFun =
         SphereFun(planetRadius, ImmutableDouble3(0.0, -planetRadius, 0.0)).add(
@@ -99,11 +99,12 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         // Rotate camera
         val radius = 5000f
         var pos = 0f
+        val speed = 100f
         world.addSystem { _, time ->
-            val speed = 1f * ((sin(time.secondsSinceStart*Tau / 30).toFloat() + 0.4f))
+            //val speed = 1f * ((sin(time.secondsSinceStart*Tau / 30).toFloat() + 0.4f))
             pos += speed * time.currentStepElapsedSeconds.toFloat()
-            cameraPosition.x = (radius * sin(time.secondsSinceStart*0.01)* -cos(-pos * Tau)).toFloat()
-            cameraPosition.z = (radius * cos(time.secondsSinceStart*0.001)* sin(-pos * Tau)).toFloat()
+            cameraPosition.x = (radius * sin(time.secondsSinceStart*0.1) + -cos(-pos * Tau)).toFloat()
+            cameraPosition.z = (radius * cos(time.secondsSinceStart*0.01) + sin(-pos * Tau)).toFloat()
             cameraPosition.y = cos(time.secondsSinceStart*0.03).toFloat() * 100f +50f
 
             lookAt.x = 2000f * -cos(0.001 * time.secondsSinceStart * Tau).toFloat()

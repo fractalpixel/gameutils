@@ -19,6 +19,7 @@ import org.kwrench.geometry.intvolume.MutableIntVolume
  */
 // TODO: Have extra non-visible layer in each direction, where the chunks are being asynchronously loaded,
 //       so that when they get into view, most/all are already loaded.  -- this might be already handled with the odd-overlap alignment
+// TODO: Chunks occasionally flicker away for one frame, appears to happen when they scroll out of view - should the chunk buffer perhaps be synchronized?
 class VoxelDetailLevel(
     val terrain: VoxelTerrain,
     val level: Int,
@@ -114,9 +115,14 @@ class VoxelDetailLevel(
         chunkBuffer.setPosition(visibleAreaCorner)
     }
 
-    fun render(context: RenderingContext3D) {
+    /**
+     * This should be called for all detail levels before the render function
+     */
+    fun updateCameraAndScrollTerrain(context: RenderingContext3D) {
         updateCameraPos(context.camera.position)
+    }
 
+    fun render(context: RenderingContext3D) {
         chunkBuffer.iterate(tempchunkPos) { globalPos, localPos, chunkJob ->
             // Get the chunk if it has been calculated and is not null
             val chunk = getChunkForJob(chunkJob)

@@ -1,5 +1,6 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
+import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Mesh
@@ -7,6 +8,8 @@ import com.badlogic.gdx.graphics.g3d.Material
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
+import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.math.collision.BoundingBox
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
 import org.fractalpixel.gameutils.libgdxutils.buildWireframeBoxPart
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
@@ -42,12 +45,10 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
     var initialized: Boolean = false
         private set
 
-    /*
     // Used for frustum culling
     private val bounds = BoundingBox()
     private var boundingSphereRadius = 0f
     private val boundingSphereCenter = Vector3()
-     */
 
 
     /**
@@ -63,10 +64,10 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         this.level = level
         this.pos.set(pos)
         this.initialShape = shape
-        /*
+
         bounds.clr()
-        //boundingSphereRadius = configuration.calculateBoundingSphere(pos, level, boundingSphereCenter)
-         */
+        boundingSphereRadius = configuration.calculateBoundingSphere(pos, level, boundingSphereCenter)
+
     }
 
     /**
@@ -92,15 +93,17 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
     /* TODO: Frustrum culling doesn't seem to work correctly, keeps flickering between frames.
              Might have to implement it ourselves?  Or is the problem misaligned chunks?  But bounding box is based on actual geometry..
+
+     */
     /**
      * Returns true if this chunk would be visible to the camera.
      */
     private fun isVisible(camera: Camera): Boolean {
         //camera.update()
-        //return camera.frustum.sphereInFrustumWithoutNearFar(boundingSphereCenter, boundingSphereRadius)
-        return camera.frustum.boundsInFrustum(bounds)
+        return camera.frustum.sphereInFrustumWithoutNearFar(boundingSphereCenter, boundingSphereRadius)
+        //return camera.frustum.boundsInFrustum(bounds)
     }
-    */
+
 
 
 
@@ -179,7 +182,6 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         // Initialize bounds
         model.calculateBoundingBox(bounds)
          */
-
     }
 
     override fun dispose() {
@@ -196,9 +198,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         level = 0
         pos.zero()
         modelInstance = null
-        /*
         bounds.clr()
-         */
     }
 
     private fun releaseShape() {

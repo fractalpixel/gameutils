@@ -27,6 +27,8 @@ class VoxelRendererLayer(val terrain: VoxelTerrain,
 
     private val detailLevels = ArrayList<VoxelDetailLevel>()
 
+    private var firstRender = true
+
     private val chunkPool = RecyclingPool(
         VoxelRenderChunk::class,
         createInstance = {VoxelRenderChunk(voxelConfiguration)})
@@ -46,7 +48,21 @@ class VoxelRendererLayer(val terrain: VoxelTerrain,
 
     override fun render(context: RenderingContext3D) {
         for (detailLevel in detailLevels) {
-            detailLevel.render(context)
+            detailLevel.updateCameraAndScrollTerrain(context)
+        }
+
+        if (firstRender) {
+            // The first time we render, render the layers in reverse order, ensuring that coarse, larege layers are
+            // calculated first and the detailed layers later.  Afterwards run in other order to prevent flickering gaps. // TODO: Find and fix them
+            for (detailLevel in detailLevels.reversed()) {
+                detailLevel.render(context)
+            }
+            firstRender = false
+        }
+        else {
+            for (detailLevel in detailLevels) {
+                detailLevel.render(context)
+            }
         }
     }
 
