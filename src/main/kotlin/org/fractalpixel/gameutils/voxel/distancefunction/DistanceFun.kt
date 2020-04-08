@@ -520,7 +520,7 @@ interface DistanceFun {
          * the exact features, to avoid aliasing.
          */
         inline fun featureBlend(sampleSize: Double, featureSize: Double): Double {
-            val noFadeRatio = 3.0 // At this many samples per feature it is still acceptably visible
+            val noFadeRatio = 2.0 // At this many samples per feature it is still acceptably visible
             val fadeOutRatio = 1.0 // Nyquist rate is 2, at that point there is information loss about the waveform
 
             if (sampleSize <= 0) return 1.0 // Requested exact values
