@@ -4,6 +4,9 @@ import org.fractalpixel.gameutils.utils.*
 import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun.Companion.antiAliasFeaturesUsingScale
 import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun.Companion.calculateSampleSize
 import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun.Companion.featureBlendUsingScale
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlock
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlockPool
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.DistanceBounds
 import org.kwrench.geometry.volume.Volume
 import org.kwrench.math.abs
 import org.kwrench.noise.OpenSimplexNoise

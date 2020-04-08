@@ -1,4 +1,4 @@
-package org.fractalpixel.gameutils.voxel.distancefunction
+package org.fractalpixel.gameutils.voxel.distancefunction.utils
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
@@ -11,7 +11,8 @@ import org.kwrench.geometry.int3.Int3
 /**
  * Pools [DepthBlock] instances.  Also keeps track of the current [blockSize] to use for them.
  */
-class DepthBlockPool(initialDataSize: Int3 = DefaultBlockSize): RecyclingPool<DepthBlock>(DepthBlock::class,1000) {
+class DepthBlockPool(initialDataSize: Int3 = DefaultBlockSize): RecyclingPool<DepthBlock>(
+    DepthBlock::class,1000) {
 
     /**
      * The size of data arrays to use.  If changed, it will clear out all currently pooled

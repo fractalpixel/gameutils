@@ -1,7 +1,6 @@
-package org.fractalpixel.gameutils.voxel.distancefunction
+package org.fractalpixel.gameutils.voxel.distancefunction.utils
 
 import org.kwrench.math.abs
-import org.kwrench.math.min
 import kotlin.math.max
 import kotlin.math.min
 

@@ -70,6 +70,14 @@
         </dependency>
 
 
+        <!-- Janino for on the fly compiling of (distance) functions -->
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+            <version>3.1.2</version>
+        </dependency>
+
+
         <!-- LibGDX 3D Engine -->
         <dependency>
             <groupId>com.badlogicgames.gdx</groupId>

@@ -8,13 +8,11 @@ import org.fractalpixel.gameutils.utils.getCoordinate
 import org.fractalpixel.gameutils.utils.isCurrentJobCanceled
 import org.fractalpixel.gameutils.utils.setCoordinate
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
-import org.fractalpixel.gameutils.voxel.distancefunction.DepthBlock
-import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlock
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
 import org.kwrench.geometry.volume.MutableVolume
-import kotlin.coroutines.coroutineContext
 import kotlin.math.abs
 
 /**

@@ -1,5 +1,8 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlock
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlockPool
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.DistanceBounds
 import org.kwrench.geometry.volume.Volume
 
 class ConstantFun(var value: Double = 0.0): DistanceFun {

@@ -8,7 +8,7 @@ import org.fractalpixel.gameutils.libgdxutils.set
 import org.fractalpixel.gameutils.libgdxutils.setWithScaleAddAndFloor
 import org.fractalpixel.gameutils.utils.iterate
 import org.fractalpixel.gameutils.utils.sub
-import org.fractalpixel.gameutils.voxel.distancefunction.DepthBlockPool
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlockPool
 import org.kwrench.checking.Check
 import org.kwrench.color.GenColor
 import org.kwrench.color.colorspace.HSLColorSpace
@@ -20,7 +20,6 @@ import org.kwrench.math.map
 import org.kwrench.math.mix
 import java.lang.IllegalArgumentException
 import kotlin.math.pow
-import kotlin.math.sqrt
 
 /**
  * Configuration for technical rendering settings for a voxel based landscape.
@@ -70,7 +69,8 @@ data class VoxelConfiguration(
     val chunkCornersExtent = ImmutableInt3(chunkCornersSize, chunkCornersSize, chunkCornersSize)
 
     // TODO: If / when we make chunk size modifiable on the fly, update it here too.
-    val depthBlockPool = DepthBlockPool(chunkCornersExtent)
+    val depthBlockPool =
+        DepthBlockPool(chunkCornersExtent)
 
 
     fun blockWorldSize(level: Int): Double = baseDetailLevelBlockSizeMeters * 2.0.pow(level)

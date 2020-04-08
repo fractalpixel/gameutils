@@ -1,4 +1,4 @@
-package org.fractalpixel.gameutils.voxel.distancefunction
+package org.fractalpixel.gameutils.voxel.distancefunction.utils
 
 import org.fractalpixel.gameutils.utils.checkForJobCancellation
 import org.kwrench.geometry.int3.ImmutableInt3
