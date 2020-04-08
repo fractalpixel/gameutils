@@ -17,7 +17,6 @@ import org.fractalpixel.gameutils.voxel.VoxelTerrain
  *   https://github.com/mikolalysenko/mikolalysenko.github.com/blob/master/Isosurface/js/surfacenets.js
  *   and https://github.com/TomaszFoster/NaiveSurfaceNets/blob/master/NaiveSurfaceNets.cs
  */
-// TODO: Add level of detail
 // TODO: Add materials & texturing (blend between 3 most present materials or similar - keep track of material amounts
 //       in small integer values (grams / milliliters)? -> no risk of creating / destroying matter)
 // TODO: Some kind of immediate mode (debugging) UI, that can show e.g. memory usage graphs and other stats.

@@ -20,8 +20,6 @@ import kotlin.math.sqrt
 //       (does e.g. Lua generate compiled and fast bytecode these days?).
 //       This gets rid of a lot of object referencing in a critical path.
 //       Janino (https://github.com/janino-compiler/janino) could be used perhaps.
-// TODO: Add sampling scale as parameter, use to smooth noise flat which is too high frequency for sampling scale, and to skip other small features
-// TODO: Calculate all depths in a volume to an array, use that to fetch distance data for a chunk -> faster!
 interface DistanceFun {
 
     /**
@@ -55,13 +53,7 @@ interface DistanceFun {
      *
      * The sample size is the (smallest) volume side size divided by the (largest) block side size
      */
-    suspend fun calculateBlock(volume: Volume, block: DepthBlock, blockPool: DepthBlockPool, leadingSeam: Int = 0, trailingSeam: Int = 0) /*{
-        // TODO: Remove later?
-        calculateBlockUsingSamples(volume, block, blockPool)
-
-        // DEBUG
-//        calculateBlockWithInterpolation(volume, block, blockPool, leadingSeam, trailingSeam)
-    }*/
+    suspend fun calculateBlock(volume: Volume, block: DepthBlock, blockPool: DepthBlockPool, leadingSeam: Int = 0, trailingSeam: Int = 0)
 
     /**
      * Calculate the block by sampling this function at each point.
@@ -353,7 +345,7 @@ interface DistanceFun {
      * and writes them to the [bounds].  May be inexact, especially if the function is very wobbly, so [extraMargin] is added to the bounds.
      * Normally starts in each corner and the center, but only in the center if [centerOnly] is set to true.
      */
-    fun gradientDecentBoundsSearch(volume: Volume, sampleSize: Double, bounds: DistanceBounds = DistanceBounds(), maxSteps: Int = 3, centerOnly: Boolean = false, extraMargin: Double = 0.15, volumeMargin: Double = 0.1): DistanceBounds {
+    fun gradientDecentBoundsSearch(volume: Volume, sampleSize: Double, bounds: DistanceBounds = DistanceBounds(), maxSteps: Int = 4, centerOnly: Boolean = false, extraMargin: Double = 0.1, volumeMargin: Double = 0.1): DistanceBounds {
         var minValue = Double.POSITIVE_INFINITY
         var maxValue = Double.NEGATIVE_INFINITY
 
