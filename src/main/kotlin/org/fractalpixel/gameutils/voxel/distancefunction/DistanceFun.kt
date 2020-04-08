@@ -19,6 +19,7 @@ import kotlin.math.sqrt
 // TODO: Consider optimizing distance functions by having them generate code that is compiled with some on-the-fly compiler
 //       (does e.g. Lua generate compiled and fast bytecode these days?).
 //       This gets rid of a lot of object referencing in a critical path.
+//       Janino (https://github.com/janino-compiler/janino) could be used perhaps.
 // TODO: Add sampling scale as parameter, use to smooth noise flat which is too high frequency for sampling scale, and to skip other small features
 // TODO: Calculate all depths in a volume to an array, use that to fetch distance data for a chunk -> faster!
 interface DistanceFun {
