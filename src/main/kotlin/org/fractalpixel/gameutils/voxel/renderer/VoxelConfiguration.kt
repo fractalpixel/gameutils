@@ -41,8 +41,8 @@ import kotlin.math.pow
 data class VoxelConfiguration(
     val detailLevelCount: Int = 15,
     val mostDetailedDetailLevel: Int = -3,
-    val chunkSize: Int = 20,
-    val levelSize: Int = 8, // TODO: Lot of overlapping layers rendered with low values..
+    val chunkSize: Int = 24,
+    val levelSize: Int = 10, // TODO: Lot of overlapping layers rendered with low values..
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
     val debugLines: Boolean = false,
     val debugLinesForEmptyBlocks: Boolean = false,
