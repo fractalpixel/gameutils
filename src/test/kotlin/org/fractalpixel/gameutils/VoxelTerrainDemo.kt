@@ -51,7 +51,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
             )
         ).add(
             NoiseFun(
-                1.0/ 1.5, 0.4, seed=7413
+                1.0/ 1.5, 0.22, seed=7413
             )
         ).add(
             NoiseFun(
