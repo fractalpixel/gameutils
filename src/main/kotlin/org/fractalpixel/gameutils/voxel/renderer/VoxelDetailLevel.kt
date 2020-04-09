@@ -18,7 +18,10 @@ import org.kwrench.geometry.intvolume.MutableIntVolume
  * Holds all voxel chunks at a specific detail level.
  */
 // TODO: Have extra non-visible layer in each direction, where the chunks are being asynchronously loaded,
-//       so that when they get into view, most/all are already loaded.  -- this might be already handled with the odd-overlap alignment
+//       so that when they get into view, most/all are already loaded.  -- this might be already handled with the
+//       odd-overlap alignment - instead do not show furthest away chunk detail in a detail level,
+//       so that chunks have time to get loaded before they need to be shown
+
 // TODO: Chunks occasionally flicker away for one frame, appears to happen when they scroll out of view - should the chunk buffer perhaps be synchronized?
 class VoxelDetailLevel(
     val terrain: VoxelTerrain,
@@ -62,7 +65,7 @@ class VoxelDetailLevel(
 
             // TODO: If current terrain calculation takes too much of the frame time (configurable parameter),
             //       delay calculating terrain somewhat (delay high resolutions more), to wait for time and to allow it to
-            //       scroll out of the view if we are moving fast.
+            //       scroll out of the view if we are moving fast. -- Is this still the sensible solution?  Maybe.
             // TODO: Ideally newly calculated terrain should fade in over time if it doesn't appear a the edges of the detail level.
 
             // Calculate shape

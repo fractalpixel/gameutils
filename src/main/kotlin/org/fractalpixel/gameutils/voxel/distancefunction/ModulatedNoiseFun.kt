@@ -6,6 +6,7 @@ import org.fractalpixel.gameutils.utils.getMaxSideSize
 import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun.Companion.antiAliasFeaturesUsingScale
 import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun.Companion.calculateSampleSize
 import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun.Companion.featureBlendUsingScale
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.CompilationContext
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlock
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlockPool
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DistanceBounds
@@ -21,10 +22,13 @@ class ModulatedNoiseFun(var scale: DistanceFun = ConstantFun(1.0),
                         var amplitude: DistanceFun = ConstantFun(1.0),
                         var offset: Double = 1.0,
                         val seed: Long = Rand.default.nextLong(),
-                        var optimizationThreshold: Double = 0.001) : DistanceFun {
+                        var optimizationThreshold: Double = 0.001) : CompilingDistanceFun() {
+
+    override val name: String get() = "ModulatedNoise"
 
     val noise = OpenSimplexNoise(seed)
 
+    /*
     override fun get(x: Double, y: Double, z: Double, sampleSize: Double): Double {
         // If the sample size is close to the feature size, blend towards average
         val s = scale.get(x, y, z, sampleSize)
@@ -32,6 +36,34 @@ class ModulatedNoiseFun(var scale: DistanceFun = ConstantFun(1.0),
             noise.noise(x * s, y * s, z * s) * amplitude.get(x, y, z, sampleSize) + offset
         }
     }
+    */
+
+    override fun constructCode(codeOut: StringBuilder, context: CompilationContext) {
+        // Get noise class
+        val noiseParam = context.parameter(codeOut, "noise", noise)
+
+        // Determine scale at this point
+        context.createCall(codeOut, scale, "scale")
+
+        // Create amplitude call (it is only actually called if it is needed)
+        val amplitudeCall = StringBuilder()
+        context.createCall(amplitudeCall, amplitude, "amplitude")
+
+        // Initialize output variable
+        codeOut.append("double #out;\n")
+
+        // Create code that looks at blend-out amount, and either uses the offset or the noise or a blend between them
+        DistanceFun.createAntiAliasFeaturesCodeUsingScale(codeOut,
+            context.currentPrefix,
+            "#out",
+            "sampleSize",
+            "#scale",
+            "$offset",
+            "$noiseParam.noise(x * #scale, y * #scale, z * #scale) * #amplitude + $offset",
+            amplitudeCall.toString()
+        )
+    }
+
 
     override suspend fun calculateBlock(
         volume: Volume,

@@ -10,6 +10,7 @@ import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.geometry.volume.Volume
 import org.kwrench.math.abs
 import org.kwrench.math.clamp0To1
+import java.lang.StringBuilder
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -19,11 +20,10 @@ import kotlin.math.sqrt
  * A distance function that defines a 3D object.  Render by finding and rendering the isosurface (surface where function returns zero).
  * The function returns the distance from the surface at a queried point, returning negative value if the point is inside the object.
  */
-// TODO: Consider optimizing distance functions by having them generate code that is compiled with some on-the-fly compiler
-//       (does e.g. Lua generate compiled and fast bytecode these days?).
-//       This gets rid of a lot of object referencing in a critical path.
-//       Janino (https://github.com/janino-compiler/janino) could be used perhaps.
+// TODO: Maybe do performance check on how much faster the janino compiled code is than multiple functions compiled with kotlin?
 interface DistanceFun {
+
+    val name: String
 
     /**
      * Returns distance to the surface from the specified point, negative if the point is inside the object.
@@ -151,8 +151,10 @@ interface DistanceFun {
      */
     fun add(other: DistanceFun): DistanceFun =
         DualOpFun(
+            "add",
             this,
-            other
+            other,
+            codeExpression = "#a + #b"
         ) { a, b -> a + b }
 
     /**
@@ -160,11 +162,13 @@ interface DistanceFun {
      */
     fun subtract(other: DistanceFun): DistanceFun =
         DualOpFun(
+            "subtract",
             this,
             other,
             {volume, sampleSize, a, b, aMin, aMax, bMin, bMax, bounds ->
                 bounds.set(aMin - bMax, aMax - bMin)
-            }
+            },
+            codeExpression = "#a - #b"
         ) { a, b -> a - b }
 
     /**
@@ -172,6 +176,7 @@ interface DistanceFun {
      */
     fun mul(other: DistanceFun): DistanceFun =
         DualOpFun(
+            "mul",
             this,
             other,
             {volume, sampleSize, a, b, aMin, aMax, bMin, bMax, bounds ->
@@ -183,7 +188,8 @@ interface DistanceFun {
                 val min = min(min(v1, v2), min(v3, v4))
                 val max = max(max(v1, v2), max(v3, v4))
                 bounds.set(min, max)
-            }
+            },
+            codeExpression = "#a * #b"
         ) { a, b -> a * b }
 
 
@@ -192,8 +198,10 @@ interface DistanceFun {
      */
     fun union(other: DistanceFun): DistanceFun =
         DualOpFun(
+            "union",
             this,
-            other
+            other,
+            codeExpression = "Math.min(#a, #b)"
         ) { a, b -> min(a, b) }
 
     /**
@@ -201,8 +209,10 @@ interface DistanceFun {
      */
     fun difference(other: DistanceFun): DistanceFun =
         DualOpFun(
+            "difference",
             this,
-            other
+            other,
+            codeExpression = "Math.max(#a, -#b)"
         ) { a, b -> max(a, -b) }
 
     /**
@@ -210,8 +220,10 @@ interface DistanceFun {
      */
     fun intersection(other: DistanceFun): DistanceFun =
         DualOpFun(
+            "intersection",
             this,
-            other
+            other,
+            codeExpression = "Math.max(#a, #b)"
         ) { a, b -> max(a, b) }
 
     /**
@@ -219,7 +231,17 @@ interface DistanceFun {
      * [smoothness] is given in distance units.
      */
     fun smoothUnion(other: DistanceFun, smoothness: Double): DistanceFun =
-        DualOpFun(this, other) { a, b ->
+        DualOpFun(
+            "smoothUnion",
+            this, other,
+            codeExpression = "",
+            code = """
+                double #h = (0.5 + 0.5 * (#b - #a) / $smoothness);
+                if (#h < 0.0) #h = 0.0;
+                else if (#h > 1.0) #h = 1.0;
+                                
+                double #out = #b + #h * (#a - #b) - $smoothness * #h * (1.0 - #h);                 
+            """.trimIndent()) { a, b ->
             val h = (0.5 + 0.5 * (b - a) / smoothness).clamp0To1()
             fastMix(h, b, a) - smoothness * h * (1.0 - h)
         }
@@ -229,7 +251,17 @@ interface DistanceFun {
      * [smoothness] is given in distance units.
      */
     fun smoothDifference(other: DistanceFun, smoothness: Double): DistanceFun =
-        DualOpFun(this, other) { a, b ->
+        DualOpFun(
+            "smoothDifference",
+            this, other,
+            codeExpression = "",
+            code = """
+                double #h = (0.5 - 0.5 * (#b + #a) / $smoothness);
+                if (#h < 0.0) #h = 0.0;
+                else if (#h > 1.0) #h = 1.0;
+                                
+                double #out = #a + #h * (-#b - #a) - $smoothness * #h * (1.0 - #h);                 
+            """.trimIndent()) { a, b ->
             val h = (0.5 - 0.5 * (b + a) / smoothness).clamp0To1()
             fastMix(h, a, -b) + smoothness * h * (1.0 - h)
         }
@@ -239,7 +271,17 @@ interface DistanceFun {
      * [smoothness] is given in distance units.
      */
     fun smoothIntersection(other: DistanceFun, smoothness: Double): DistanceFun =
-        DualOpFun(this, other) { a, b ->
+        DualOpFun(
+            "smoothIntersection",
+            this, other,
+            codeExpression = "",
+            code = """
+                double #h = (0.5 - 0.5 * (#b - #a) / $smoothness);
+                if (#h < 0.0) #h = 0.0;
+                else if (#h > 1.0) #h = 1.0;
+                                
+                double #out = #b + #h * (#a - #b) + $smoothness * #h * (1.0 - #h);                 
+            """.trimIndent()) { a, b ->
             val h = (0.5 - 0.5 * (b - a) / smoothness).clamp0To1()
             fastMix(h, b, a) + smoothness * h * (1.0 - h)
         }
@@ -256,7 +298,10 @@ interface DistanceFun {
      * for this reason this function is clamped to 0 if it is less than zero.
      */
     fun pow(exponent: DistanceFun): DistanceFun =
-        DualOpFun(this, exponent) { a, b ->
+        DualOpFun(
+            "pow",
+            this, exponent,
+        codeExpression = "#a <= 0.0 ? 0.0 : Math.pow(#a, #b)") { a, b ->
             if (a <= 0.0) 0.0 else a.pow(b)
         }
 
@@ -264,13 +309,15 @@ interface DistanceFun {
      * Returns absolute value of this function.
      */
     fun abs(): DistanceFun =
-        SingleOpFun(this,
+        SingleOpFun("abs",this,
             calculateBounds = {volume, sampleSize, a, aMin, aMax, bounds ->
                 val min = if (aMin <= 0.0 && aMax >= 0.0) 0.0 // Value range crosses zero, so zero is smallest possible value
                                  else min(aMin.abs(), aMax.abs())
                 val max = max(aMin.abs(), aMax.abs())
                 bounds.set(min, max)
-            }) { f ->
+            },
+            codeExpression = "Math.abs(#f)"
+        ) { f ->
             f.abs()
         }
 
@@ -461,6 +508,9 @@ interface DistanceFun {
     }
 
     companion object {
+        val noFadeRatio = 2.0 // At this many samples per feature it is still acceptably visible
+        val fadeOutRatio = 1.0 // Nyquist rate is 2, at that point there is information loss about the waveform
+
         /**
          * Sample size to use when sampling the specified volume for the specified block.
          */
@@ -513,6 +563,27 @@ interface DistanceFun {
             }
         }
 
+        fun createAntiAliasFeaturesCodeUsingScale(codeOut: StringBuilder, prefix: String, outputVar: String, sampleSizeVar: String, featureScaleCode: String, averageExpressionCode: String, featureExpressionCode: String, featureCalculationCode: String = "") {
+            codeOut.append("""
+                double ${prefix}_ratio = $sampleSizeVar <= 0.0 ? 1.0 : Math.abs($featureScaleCode) <= 0.0 ? 0.0 : (1.0 / Math.abs($featureScaleCode)) / ${sampleSizeVar};
+                if (${prefix}_ratio <= $fadeOutRatio) {
+                    $outputVar = $averageExpressionCode;
+                }
+                else {
+                    $featureCalculationCode
+                                       
+                    if (${prefix}_ratio >= $noFadeRatio) {
+                        $outputVar = $featureExpressionCode;
+                    }
+                    else {
+                        double ${prefix}_relPos = (${prefix}_ratio - $fadeOutRatio) / (${noFadeRatio - fadeOutRatio});
+                        double ${prefix}_a = $averageExpressionCode;
+                        $outputVar = ${prefix}_a + ${prefix}_relPos * (($featureExpressionCode) - ${prefix}_a);    
+                    }
+                }
+            """.trimIndent())
+        }
+
         /**
          * Returns amount of features to preserve.  As the sample size grows larger than the feature size, this
          * goes from one towards zero.
@@ -520,11 +591,7 @@ interface DistanceFun {
          * the exact features, to avoid aliasing.
          */
         inline fun featureBlend(sampleSize: Double, featureSize: Double): Double {
-            val noFadeRatio = 2.0 // At this many samples per feature it is still acceptably visible
-            val fadeOutRatio = 1.0 // Nyquist rate is 2, at that point there is information loss about the waveform
-
             if (sampleSize <= 0) return 1.0 // Requested exact values
-
             val ratio = featureSize.abs() / sampleSize
             return when {
                 ratio >= noFadeRatio -> 1.0 // Sample size is small enough to more or less sample features
@@ -548,5 +615,7 @@ interface DistanceFun {
             else featureBlend(sampleSize, 1.0 / scale)
         }
     }
+
+
 }
 

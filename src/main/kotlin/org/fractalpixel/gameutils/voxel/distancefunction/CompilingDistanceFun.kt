@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.CompilationContext
+import java.lang.Exception
 import java.lang.reflect.Method
 
 /**
@@ -15,7 +16,9 @@ abstract class CompilingDistanceFun: DistanceFun {
 
     private val compileMutex = Mutex()
 
-    override fun get(x: Double, y: Double, z: Double, sampleSize: Double): Double {
+    private var context: CompilationContext = CompilationContext()
+
+    final override fun get(x: Double, y: Double, z: Double, sampleSize: Double): Double {
         // Get evaluator method, or compile it if it is null
         var distanceFun = compiledDistanceFun
         if (distanceFun == null) {
@@ -28,7 +31,7 @@ abstract class CompilingDistanceFun: DistanceFun {
                         anotherTry
                     } else {
                         // No one else compiled it yet, so we do it
-                        val compiledFun = compileFunction()
+                        val compiledFun = context.compileFunction(this@CompilingDistanceFun)
 
                         // Cache it with this DistanceFun, so that we don't have to compile it every time!
                         compiledDistanceFun = compiledFun
@@ -41,17 +44,11 @@ abstract class CompilingDistanceFun: DistanceFun {
         }
 
         // Invoke evaluator method
-        return distanceFun.invoke(null, x, y, z, sampleSize) as Double
-    }
-
-    fun compileFunction(): Method {
-        // Build code and compile it
-        val context = CompilationContext()
-        return context.compileFunction(this)
+        return distanceFun.invoke(null, x, y, z, sampleSize, context) as Double
     }
 
     /**
-     * Return code template for this function.
+     * Write code template for this function to [codeOut].
      *
      * Parameters #x, #y, #z, #sampleSize will be replaced with the parameter variable names.
      * #out will be replaced with the output variable name.
@@ -59,7 +56,17 @@ abstract class CompilingDistanceFun: DistanceFun {
      *
      * The [context] can be used to create code to invoke another [DistanceFun].
      */
-    abstract fun constructCode(context: CompilationContext): String
+    abstract fun constructCode(codeOut: StringBuilder, context: CompilationContext)
+
+    /**
+     * For debugging purposes
+     */
+    final fun previewCode(): String {
+        val context = CompilationContext()
+        val s = StringBuilder()
+        constructCode(s,  context)
+        return s.toString()
+    }
 
     /**
      * Clears previously compiled scripts.

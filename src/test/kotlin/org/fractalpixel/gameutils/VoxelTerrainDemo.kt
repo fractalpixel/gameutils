@@ -92,6 +92,9 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
     val terrain = VoxelTerrain(planetFunction)
 
     override fun createProcessors(world: World) {
+
+        println((planetFunction as CompilingDistanceFun).previewCode())
+
         world.addSystem(CaptionSystem())
         cameraSystem = world.addSystem(CameraSystem(PerspectiveCamera()))
         world.addSystem(InputControlSystem())

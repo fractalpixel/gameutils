@@ -38,6 +38,7 @@ import kotlin.math.pow
 //       Probably level size and most detailed level are the ones to tune, as well as detail level count a bit.
 // TODO: Change detail level count to mostRoughDetailLevel or similar instead.
 // TODO: Adaptively adjust chunk size based on performance?  To some degree at least?
+// TODO: There are sometimes chunks that don't get released, more clearly e.g. with levelCount 3, mostDetailed 0, levelSize 8, chunk size 24
 data class VoxelConfiguration(
     val detailLevelCount: Int = 15,
     val mostDetailedDetailLevel: Int = -3,

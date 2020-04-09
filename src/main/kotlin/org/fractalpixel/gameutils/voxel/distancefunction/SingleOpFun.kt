@@ -1,6 +1,7 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
 import org.fractalpixel.gameutils.utils.checkForJobCancellation
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.CompilationContext
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlock
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlockPool
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DistanceBounds
@@ -9,15 +10,24 @@ import org.kwrench.geometry.volume.Volume
 /**
  * Modifies a DistanceFun with a single operation.
  */
-class SingleOpFun(var f: DistanceFun,
+class SingleOpFun(override val name: String,
+                  var f: DistanceFun,
                   inline var calculateBounds: (volume: Volume, sampleSize: Double, a: DistanceFun, aMin: Double, aMax: Double, bounds: DistanceBounds) -> Unit = {
                           volume, sampleSize, a, aMin, aMax, bounds ->
                       bounds.set(op(aMin), op(aMax))
                   },
-                  inline var op: (value: Double) -> Double): DistanceFun {
+                  val codeExpression: String,
+                  val code: String = "double #out = $codeExpression;",
+                  inline var op: (value: Double) -> Double): CompilingDistanceFun() {
 
+    /*
     override fun get(x: Double, y: Double, z: Double, sampleSize: Double): Double {
         return op(f.get(x, y, z, sampleSize))
+    }
+     */
+    override fun constructCode(codeOut: StringBuilder, context: CompilationContext) {
+        context.createCall(codeOut, f, "f")
+        codeOut.append(code)
     }
 
     override suspend fun calculateBlock(

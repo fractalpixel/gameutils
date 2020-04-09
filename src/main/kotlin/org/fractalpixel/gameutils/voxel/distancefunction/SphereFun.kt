@@ -1,6 +1,7 @@
 package org.fractalpixel.gameutils.voxel.distancefunction
 
 import org.fractalpixel.gameutils.utils.*
+import org.fractalpixel.gameutils.voxel.distancefunction.utils.CompilationContext
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlock
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlockPool
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DistanceBounds
@@ -12,10 +13,17 @@ import org.kwrench.geometry.volume.Volume
  */
 class SphereFun(var radius: Double = 1.0,
                 var center: Double3 = Double3.ZEROES,
-                var optimizationThreshold: Double = 0.001): DistanceFun {
+                var optimizationThreshold: Double = 0.001): CompilingDistanceFun() {
 
-    override fun get(x: Double, y: Double, z: Double, sampleSize: Double): Double {
-        return center.distanceTo(x, y, z) - radius
+    override val name: String get() = "Sphere"
+
+    override fun constructCode(codeOut: StringBuilder, context: CompilationContext) {
+        codeOut.appendln("""
+            double #dx = x - ${center.x};
+            double #dy = y - ${center.y};
+            double #dz = z - ${center.z};
+            double #out = Math.sqrt(#dx * #dx + #dy * #dy + #dz * #dz) - $radius;
+        """.trimIndent())
     }
 
     override suspend fun calculateBlock(

@@ -21,9 +21,10 @@ class CompilingDistanceFunTest {
 }
 
 class TestDF(): CompilingDistanceFun() {
+    override val name: String get() = "TestDF"
 
-    override fun constructCode(context: CompilationContext): String {
-        return "double #out = 40.0 + #y;"
+    override fun constructCode(codeOut: StringBuilder, context: CompilationContext) {
+        codeOut.appendln("double #out = 40.0 + #y;")
     }
 
     override suspend fun calculateBlock(
