@@ -91,7 +91,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         }
     }
 
-    /* TODO: Frustrum culling doesn't seem to work correctly, keeps flickering between frames.
+    /* BUG: Frustrum culling doesn't seem to work correctly, keeps flickering between frames.
              Might have to implement it ourselves?  Or is the problem misaligned chunks?  But bounding box is based on actual geometry..
 
      */
@@ -144,7 +144,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         val mayContainSurface = terrain.distanceFun.mayContainSurface(configuration.getChunkVolume(pos, level), configuration.blockWorldSize(level))
         val wireframeColor = configuration.calculateBlockLevelDebugColor(level, mayContainSurface, createdMesh.numIndices > 0)
 
-        // TODO: (low priority) Add different debug visualization modes later if needed?  Maybe more generic system
+        // IDEA: Add different debug visualization modes later if needed?  Maybe more generic system
 
         if (configuration.debugLines && (configuration.debugLinesForEmptyBlocks)) {
             val corner = configuration.chunkWorldCornerPos(pos, level)

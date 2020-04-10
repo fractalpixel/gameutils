@@ -26,7 +26,7 @@ import org.kwrench.math.Tau
 import java.lang.Math.cos
 import java.lang.Math.sin
 
-// TODO: Bit of a mess currently, clean up later.
+// CLEANUP: Bit of a mess currently, clean up later.
 class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
     lateinit var cameraSystem: CameraSystem
@@ -147,7 +147,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         // Bump priority of OpenGL thread to the max, to avoid UI freezes while calculation is ongoing in other threads.
         Thread.currentThread().priority = Thread.MAX_PRIORITY
 
-        // TODO: Remove later?
+        // CLEANUP: Remove later?
         // println("Buffer format: " + Gdx.graphics.bufferFormat)
 
         renderingContext.camera = cameraSystem.camera

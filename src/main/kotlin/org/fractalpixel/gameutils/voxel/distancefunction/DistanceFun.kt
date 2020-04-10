@@ -321,7 +321,7 @@ interface DistanceFun {
             f.abs()
         }
 
-    // TODO: Add mix between two functions using a third to select.
+    // FEATURE: Add mix between two functions using a third to select.
     // TODO: More generally, use some criteria to select 'ecotype', and apply function for that ecotype,
     //       with smooth transitions.  Might include some data from outside, e.g. height that is used in all ecotypes.
     //       Ecotypes might require a higher abstraction layer that also addresses materials and entity instance generation.
@@ -401,7 +401,7 @@ interface DistanceFun {
 
         fun search(findMax: Boolean, startX: Double, startY: Double, startZ: Double, stepSizeMultiplier: Double) {
             // Scale for adjusting step size with after each iteration.
-            val stepScale = 0.75 // TODO: There's probably an optimal way to determine this..
+            val stepScale = 0.75 // LATER: There's probably an optimal way to determine this..
 
             // Calculate initial step size
             var step = (volume.diagonalLength() / maxSteps) * stepSizeMultiplier

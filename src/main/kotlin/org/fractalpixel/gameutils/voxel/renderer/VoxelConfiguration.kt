@@ -29,21 +29,21 @@ import kotlin.math.pow
  * Also contains functions for doing most of the tricky coordinate math for voxel blocks, chunks and detail levels.
  *
  * Also holds (some of) the object pools used when rendering a voxel landscape, so this is not a lightweight object.
- * // TODO: is there need to move the pools to a separate object, that might be created on demand by the configuration?
+ * // CHECK: is there need to move the pools to a separate object, that might be created on demand by the configuration?
  *
  * [chunkSize] number of blocks in a chunk along each axis.
  */
-// TODO: More easily configurable resolution settings, from low res potato to high end machine,
+// FEATURE: More easily configurable resolution settings, from low res potato to high end machine,
 //       in such a way that relevant terrain features are still visible close up, and rough outlines far away.
 //       Probably level size and most detailed level are the ones to tune, as well as detail level count a bit.
 // TODO: Change detail level count to mostRoughDetailLevel or similar instead.
-// TODO: Adaptively adjust chunk size based on performance?  To some degree at least?
-// TODO: There are sometimes chunks that don't get released, more clearly e.g. with levelCount 3, mostDetailed 0, levelSize 8, chunk size 24
+// FEATURE: Adaptively adjust chunk size based on performance?  To some degree at least?
+// BUG: There are sometimes chunks that don't get released, more clearly e.g. with levelCount 3, mostDetailed 0, levelSize 8, chunk size 24
 data class VoxelConfiguration(
     val detailLevelCount: Int = 10,
     val mostDetailedDetailLevel: Int = -2,
     val chunkSize: Int = 24,
-    val levelSize: Int = 8, // TODO: Lot of overlapping layers rendered with low values..
+    val levelSize: Int = 8, // FIXME: Lot of overlapping layers rendered with low values..
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
     val debugLines: Boolean = false,
     val debugLinesForEmptyBlocks: Boolean = false,
@@ -69,7 +69,7 @@ data class VoxelConfiguration(
     val chunkExtent = ImmutableInt3(chunkSize, chunkSize, chunkSize)
     val chunkCornersExtent = ImmutableInt3(chunkCornersSize, chunkCornersSize, chunkCornersSize)
 
-    // TODO: If / when we make chunk size modifiable on the fly, update it here too.
+    // FEATURE: If / when we make chunk size modifiable on the fly, update it here too.
     val depthBlockPool =
         DepthBlockPool(chunkCornersExtent)
 
@@ -191,7 +191,7 @@ data class VoxelConfiguration(
         cornerChunkOut.sub(levelSize / 2)
 
         // Align to even chunk coordinates.
-        // TODO: Align - does this skew the position sideways?
+        // CHECK: Align - does this skew the position sideways?
         cornerChunkOut.divide(2).scale(2).add(Int3.ONES)
         return cornerChunkOut
     }

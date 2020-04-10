@@ -19,7 +19,7 @@ import org.kwrench.random.Rand
  */
 // TODO: A custom 3D noise function that supports exact bounds calculation out of the box, as well as gradient and sample size would be nice and would
 //       probably speed things up considerably.
-// TODO: Switch scale to mean feature size instead of coordinate scaling, much more intuitive to use and code with
+// REFACTOR: Switch scale to mean feature size instead of coordinate scaling, much more intuitive to use and code with
 class NoiseFun(var scale: Double = 1.0,
                var amplitude: Double = 1.0,
                var offset: Double = 1.0,

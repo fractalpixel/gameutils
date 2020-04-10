@@ -27,7 +27,7 @@ import java.lang.IllegalStateException
  * Note that this class is not thread safe (e.g. iterators use same temporary variables, so are not recursion safe either..)
  */
 // TODO: Make more thread and recursion safe?
-// TODO: Reduce creating new Int3:s by introducing functions that take xyz params.
+// REFACTOR: Reduce creating new Int3:s by introducing functions that take xyz params.
 class PanBuffer<T: Any>(
     initialSize: Int3,
     initialPosition: Int3 = Int3.ZEROES,

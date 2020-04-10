@@ -17,7 +17,7 @@ import org.kwrench.random.Rand
 /**
  * Noise based distance function, where the scale and amplitude may be functions.
  */
-// TODO: Switch scale to mean feature size instead of coordinate scaling, much more intuitive to use and code with
+// REFACTOR: Switch scale to mean feature size instead of coordinate scaling, much more intuitive to use and code with
 class ModulatedNoiseFun(var scale: DistanceFun = ConstantFun(1.0),
                         var amplitude: DistanceFun = ConstantFun(1.0),
                         var offset: Double = 1.0,

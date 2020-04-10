@@ -17,12 +17,12 @@ import org.kwrench.geometry.intvolume.MutableIntVolume
 /**
  * Holds all voxel chunks at a specific detail level.
  */
-// TODO: Have extra non-visible layer in each direction, where the chunks are being asynchronously loaded,
+// IDEA: Have extra non-visible layer in each direction, where the chunks are being asynchronously loaded,
 //       so that when they get into view, most/all are already loaded.  -- this might be already handled with the
 //       odd-overlap alignment - instead do not show furthest away chunk detail in a detail level,
 //       so that chunks have time to get loaded before they need to be shown
 
-// TODO: Chunks occasionally flicker away for one frame, appears to happen when they scroll out of view - should the chunk buffer perhaps be synchronized?
+// BUG: Chunks occasionally flicker away for one frame, appears to happen when they scroll out of view - should the chunk buffer perhaps be synchronized?
 class VoxelDetailLevel(
     val terrain: VoxelTerrain,
     val level: Int,
@@ -63,7 +63,7 @@ class VoxelDetailLevel(
 
         val job = VoxelCoroutineScope.async {
 
-            // TODO: If current terrain calculation takes too much of the frame time (configurable parameter),
+            // IDEA: If current terrain calculation takes too much of the frame time (configurable parameter),
             //       delay calculating terrain somewhat (delay high resolutions more), to wait for time and to allow it to
             //       scroll out of the view if we are moving fast. -- Is this still the sensible solution?  Maybe.
             // TODO: Ideally newly calculated terrain should fade in over time if it doesn't appear a the edges of the detail level.
@@ -165,7 +165,7 @@ class VoxelDetailLevel(
                 chunkPos.y * 2 + 1,
                 chunkPos.z * 2 + 1)
 
-            // TODO: Seems his is not needed with the new alignment?
+            // CHECK: Seems his is not needed with the new alignment?
 //            tempVolume.expand(1) // Require at least 1 chunk for smooth transition
 
             !moreDetailedLevel.containsChunks(tempVolume)
@@ -195,7 +195,7 @@ class VoxelDetailLevel(
 
                 if (chunk == null) true // Empty chunk (e.g. air or solid)
                 else true // chunk.initialized // Chunk should have the model created and in use
-                // TODO: For some reason the above doesn't work.. and there seems to be occasional frames where one chunk is missing (could maybe be gradient descent screening too? - but why only 1 frame in that case?)
+                // BUG: For some reason the above doesn't work.. and there seems to be occasional frames where one chunk is missing (could maybe be gradient descent screening too? - but why only 1 frame in that case?)
             }
             */
 

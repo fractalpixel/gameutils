@@ -19,7 +19,7 @@ import org.fractalpixel.gameutils.voxel.VoxelTerrain
  */
 // TODO: Add materials & texturing (blend between 3 most present materials or similar - keep track of material amounts
 //       in small integer values (grams / milliliters)? -> no risk of creating / destroying matter)
-// TODO: Some kind of immediate mode (debugging) UI, that can show e.g. memory usage graphs and other stats.
+// FEATURE: Some kind of immediate mode (debugging) UI, that can show e.g. memory usage graphs and other stats.
 class VoxelRendererLayer(val terrain: VoxelTerrain,
                          val voxelConfiguration: VoxelConfiguration = VoxelConfiguration()
 ): Layer3D(loadShaderProvider("shaders/default")) {
