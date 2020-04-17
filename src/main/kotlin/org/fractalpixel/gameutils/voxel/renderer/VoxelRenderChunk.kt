@@ -146,19 +146,21 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
         // IDEA: Add different debug visualization modes later if needed?  Maybe more generic system
 
-        if (configuration.debugLines && (configuration.debugLinesForEmptyBlocks)) {
+        if (configuration.debugLines) {
             val corner = configuration.chunkWorldCornerPos(pos, level)
             var sideLen = configuration.chunkWorldSize(level).toFloat()
+
             if (configuration.debugOutlines) {
-                modelBuilder.buildWireframeBoxPart(corner, sideLen, color = configuration.blockEdgeDebugLineColor)
+                modelBuilder.buildWireframeBoxPart(corner, sideLen, color = configuration.blockEdgeDebugLineColor, id = wireframeId)
             }
 
-            corner.add(configuration.blockTypeDebugLineSpacing * sideLen)
-            sideLen *= (1f - 2f * configuration.blockTypeDebugLineSpacing)
-
-            modelBuilder.buildWireframeBoxPart(
-                corner, sideLen, color = wireframeColor
-            )
+            if (configuration.debugLinesForEmptyBlocks || mayContainSurface) {
+                corner.add(configuration.blockTypeDebugLineSpacing * sideLen)
+                sideLen *= (1f - 2f * configuration.blockTypeDebugLineSpacing)
+                modelBuilder.buildWireframeBoxPart(
+                    corner, sideLen, color = wireframeColor, id = wireframeId
+                )
+            }
         }
 
         // Debug visualize this:
@@ -168,7 +170,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         if (createdMesh.numVertices > 0 && createdMesh.numIndices > 0) {
             val material = Material()
             material.set(ColorAttribute.createDiffuse(0.8f * debugColor.r, 0.8f * debugColor.g, 0.8f * debugColor.b, 1f))
-            modelBuilder.part("mesh", createdMesh, GL20.GL_TRIANGLES, material)
+            modelBuilder.part(voxelTerrainChunkId, createdMesh, GL20.GL_TRIANGLES, material)
         }
 
         // Create model from chunk shape and wireframe
@@ -221,7 +223,17 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
         private val meshPool = MeshPool() // This needs to be accessed from the OpenGL thread anyway, so keep it here.
 
+        /**
+         * Used as id for meshparts that contain voxel terrain.
+         * Used by the shader provider to decide on the shader to use.
+         */
+        val voxelTerrainChunkId = "voxelTerrainChunk"
 
+        /**
+         * Used as id for meshparts that contain voxel terrain.
+         * Used by the shader provider to decide on the shader to use.
+         */
+        val wireframeId = "wireframe"
 
     }
 

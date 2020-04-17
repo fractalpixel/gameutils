@@ -93,7 +93,10 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
     override fun createProcessors(world: World) {
 
+        /*
+        // DEBUG: Show signed distance function preview
         println((planetFunction as CompilingDistanceFun).previewCode())
+        */
 
         world.addSystem(CaptionSystem())
         cameraSystem = world.addSystem(CameraSystem(PerspectiveCamera()))

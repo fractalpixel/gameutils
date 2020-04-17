@@ -192,7 +192,7 @@ varying vec3 v_ambientLight;
 // Used for the logarithmic depth field
 // TODO: Maybe pass these as uniform parameters?
 const float C = 0.001;
-const float Far = 100000f;
+const float Far = 100000.0;
 
 
 void main() {

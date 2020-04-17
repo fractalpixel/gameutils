@@ -217,14 +217,15 @@ class ShapeBuilder {
     fun createModel(material: Material = Material(ColorAttribute.createDiffuse(Color.LIGHT_GRAY)),
                     isStatic: Boolean = true,
                     normalizeNormals: Boolean = true,
-                    clearAfterwards: Boolean = true): Model {
+                    clearAfterwards: Boolean = true,
+                    id: String = "mesh"): Model {
 
         // Create mesh
         val mesh = createMesh(isStatic, normalizeNormals, clearAfterwards)
 
         // Create model
         modelBuilder.begin()
-        modelBuilder.part("mesh", mesh, GL20.GL_TRIANGLES, material)
+        modelBuilder.part(id, mesh, GL20.GL_TRIANGLES, material)
         return modelBuilder.end()
     }
 

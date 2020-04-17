@@ -22,7 +22,7 @@ import org.fractalpixel.gameutils.voxel.VoxelTerrain
 // FEATURE: Some kind of immediate mode (debugging) UI, that can show e.g. memory usage graphs and other stats.
 class VoxelRendererLayer(val terrain: VoxelTerrain,
                          val voxelConfiguration: VoxelConfiguration = VoxelConfiguration()
-): Layer3D(loadShaderProvider("shaders/default")) {
+): Layer3D(VoxelTerrainShaderProvider()) {
 
     private val detailLevels = ArrayList<VoxelDetailLevel>()
 

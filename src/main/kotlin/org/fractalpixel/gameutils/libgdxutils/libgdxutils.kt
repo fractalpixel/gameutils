@@ -24,6 +24,7 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.math.collision.BoundingBox
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.tools.texturepacker.TexturePacker
+import com.badlogic.gdx.utils.GdxRuntimeException
 import com.badlogic.gdx.utils.Json
 import org.kwrench.geometry.double2.Double2
 import org.kwrench.geometry.double3.Double3
@@ -39,6 +40,7 @@ import org.kwrench.math.fastFloor
 import org.kwrench.math.round
 import java.io.File
 import java.io.FileReader
+import java.lang.IllegalStateException
 
 
 // Utilities to make libgdx work a bit smoother with some kotlin features, as well as with the used utility libraries.
@@ -448,7 +450,8 @@ fun ModelBuilder.buildWireframeBoxPart(position: Vector3,
                                        sizeZ: Float = sizeX,
                                        color: Color = Color(0.1f, 0.5f, 0.1f, 1f),
                                        center: Boolean = false,
-                                       doBeginEnd: Boolean = false) {
+                                       doBeginEnd: Boolean = false,
+                                       id: String = "wireframe" ) {
     if (doBeginEnd) begin()
 
     // Material
@@ -456,7 +459,7 @@ fun ModelBuilder.buildWireframeBoxPart(position: Vector3,
     wireframeMaterial.set(ColorAttribute.createDiffuse(color))
 
     // Part builder
-    val gridBuilder: MeshPartBuilder = part("wireframe", GL20.GL_LINES, VertexAttributes.Usage.Position.toLong(), wireframeMaterial)
+    val gridBuilder: MeshPartBuilder = part(id, GL20.GL_LINES, VertexAttributes.Usage.Position.toLong(), wireframeMaterial)
 
     // Corner vertexes
     val corner = if (center) position.cpy().sub(sizeX/2, sizeY/2, sizeZ/2) else position
@@ -486,16 +489,39 @@ fun ModelBuilder.buildWireframeBoxPart(position: Vector3,
 }
 
 
+fun loadTextFile(name: String): String {
+    // Try to find in resources dir
+    val file = File("./src/main/resources/$name")
+    if (file.exists()) return file.readText()
+
+    // DEBUG: Force use of actual file, remove this later
+    throw IllegalStateException("Not found: $file")
+
+    // Try to load internal
+    return Gdx.files.internal(name).readString()
+}
+
+
 fun loadShaderProvider(internalPath: String): ShaderProvider {
-    val vert = Gdx.files.internal("$internalPath.vertex.glsl").readString()
-    val frag = Gdx.files.internal("$internalPath.fragment.glsl").readString()
+    val vert = loadTextFile("$internalPath.vertex.glsl")
+    val frag = loadTextFile("$internalPath.fragment.glsl")
     return DefaultShaderProvider(vert, frag)
 }
 
+/**
+ * Loads shader program from the specified internal path.  The .vertex.glsl and .fragment.glsl extensions are added
+ * automatically.  If the program doesn't compile, a GdxRuntimeException is thrown.
+ */
 fun loadShaderProgram(internalPath: String): ShaderProgram {
-    val vert = Gdx.files.internal("$internalPath.vertex.glsl").readString()
-    val frag = Gdx.files.internal("$internalPath.fragment.glsl").readString()
-    return ShaderProgram(vert, frag)
+    val vert = loadTextFile("$internalPath.vertex.glsl")
+    val frag = loadTextFile("$internalPath.fragment.glsl")
+    val shaderProgram = ShaderProgram(vert, frag)
+
+    if (!shaderProgram.isCompiled) {
+        throw GdxRuntimeException(shaderProgram.log)
+    }
+
+    return shaderProgram
 }
 
 /**
@@ -529,3 +555,26 @@ fun MutableVolume.set(boundingBox: BoundingBox) {
         false
     )
 }
+
+/**
+ * Stores this vector to the given position in the specified float array.
+ * If the array is not specified, a new 3-length float array is created.
+ */
+fun Vector3.toFloatArray(arrayOut: FloatArray = FloatArray(3), arrayStartPos: Int = 0): FloatArray {
+    arrayOut[arrayStartPos + 0] = x
+    arrayOut[arrayStartPos + 1] = y
+    arrayOut[arrayStartPos + 2] = z
+    return arrayOut
+}
+
+/**
+ * Stores this vector to the given position in the specified float array.
+ * If the array is not specified, a new 2-length float array is created.
+ */
+fun Vector2.toFloatArray(arrayOut: FloatArray = FloatArray(2), arrayStartPos: Int = 0): FloatArray {
+    arrayOut[arrayStartPos + 0] = x
+    arrayOut[arrayStartPos + 1] = y
+    return arrayOut
+}
+
+
