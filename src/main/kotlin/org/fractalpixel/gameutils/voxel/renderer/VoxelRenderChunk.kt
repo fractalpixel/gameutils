@@ -7,18 +7,27 @@ import com.badlogic.gdx.graphics.Mesh
 import com.badlogic.gdx.graphics.g3d.Material
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
+import com.badlogic.gdx.graphics.g3d.environment.BaseLight
+import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
+import com.badlogic.gdx.graphics.g3d.environment.PointLight
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.math.collision.BoundingBox
+import org.entityflakes.Entity
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
 import org.fractalpixel.gameutils.libgdxutils.buildWireframeBoxPart
+import org.fractalpixel.gameutils.lights.InfiniteLight
+import org.fractalpixel.gameutils.lights.LightProvider
+import org.fractalpixel.gameutils.lights.SphericalLight
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
+import org.fractalpixel.gameutils.space.Location
 import org.fractalpixel.gameutils.utils.MeshPool
 import org.fractalpixel.gameutils.utils.Recyclable
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
 import org.fractalpixel.gameutils.voxel.distancefunction.ConstantFun
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
+import org.kwrench.geometry.volume.Volume
 
 /**
  * Holds rendering data for a voxel chunk.
@@ -84,11 +93,38 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
     fun render(context: RenderingContext3D) {
         initializeModelIfCalculated()
 
+        // Create relevant lights
+        // TODO: Caache lights between invocations?
+        val directionalLights = ArrayList<DirectionalLight>()
+        val pointLights = ArrayList<PointLight>()
+
+        // Directional
+        terrain.lightProvider.forEachInfiniteLight { entity, light ->
+            directionalLights.add(light.createGdxLight())
+        }
+
+        // Point
+        val volume = configuration.getChunkVolume(pos, level)
+        val minimumSize = configuration.blockWorldSize(level)
+        terrain.lightProvider.forEachPointLight(volume, minimumSize) { entity, location, light ->
+            pointLights.add(light.createGdxLight())
+        }
+
+        // Add lights to environment
+        // TODO: Use own structures?
+        val environment = context.environment!!
+        directionalLights.forEach { environment.add(it) }
+        pointLights.forEach { environment.add(it) }
+
         // Render model instance if available
         val currentModelInstance = modelInstance
         if (currentModelInstance != null /* && isVisible(context.camera) */ ) {
-            context.modelBatch.render(currentModelInstance, context.environment)
+            context.modelBatch.render(currentModelInstance, environment)
         }
+
+        // Remove added lights
+        directionalLights.forEach { environment.remove(it) }
+        pointLights.forEach { environment.remove(it) }
     }
 
     /* BUG: Frustrum culling doesn't seem to work correctly, keeps flickering between frames.
@@ -219,7 +255,15 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
 
     companion object {
-        private val emptyTerrain = VoxelTerrain(ConstantFun(1.0))
+        val emptyLightProvider = object : LightProvider {
+            override fun forEachPointLight(volume: Volume, minimumSize: Double, visitor: (entity: Entity, location: Location, light: SphericalLight) -> Unit) {
+            }
+
+            override fun forEachInfiniteLight(visitor: (entity: Entity, light: InfiniteLight) -> Unit) {
+            }
+        }
+
+        private val emptyTerrain = VoxelTerrain(ConstantFun(1.0), emptyLightProvider)
 
         private val meshPool = MeshPool() // This needs to be accessed from the OpenGL thread anyway, so keep it here.
 

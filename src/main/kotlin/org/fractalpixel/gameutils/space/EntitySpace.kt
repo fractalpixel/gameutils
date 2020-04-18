@@ -10,6 +10,7 @@ import org.kwrench.geometry.volume.Volume
  * Could also be used for broad-phase collision detection.
  */
 // TODO: Consider a separate space to world transformation for each entityspace?
+// TODO: Concept of an entity space where entities are generated on the fly and only saved if interacted with?  Entity provider interface for World?
 interface EntitySpace: Space {
 
     /**

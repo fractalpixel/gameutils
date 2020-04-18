@@ -15,6 +15,7 @@ import org.kwrench.geometry.double3.Double3
  */
 // TODO: Add bounding sphere for entity occupying the location, for easier storage in space implementations
 // TODO: Could also store orientation?
+// TODO: Add function to get/set/modify world position of entity by applying transformations for any spaces it is located in
 class Location(initialX: Double = 0.0,
                initialY: Double = 0.0,
                initialZ: Double = 0.0,

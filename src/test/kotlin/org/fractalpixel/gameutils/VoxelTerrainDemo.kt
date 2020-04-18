@@ -1,6 +1,5 @@
 package org.fractalpixel.gameutils
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.badlogic.gdx.graphics.Color
@@ -14,15 +13,21 @@ import org.entityflakes.World
 import org.fractalpixel.gameutils.camera.CameraSystem
 import org.fractalpixel.gameutils.captionservice.CaptionSystem
 import org.fractalpixel.gameutils.controls.InputControlSystem
-import org.fractalpixel.gameutils.rendering.DefaultRenderingContext3D
+import org.fractalpixel.gameutils.libgdxutils.GdxColorType
+import org.fractalpixel.gameutils.lights.LightSystem
+import org.fractalpixel.gameutils.lights.SphericalLight
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
+import org.fractalpixel.gameutils.space.Location
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
 import org.fractalpixel.gameutils.voxel.distancefunction.*
 import org.fractalpixel.gameutils.voxel.renderer.VoxelRendererLayer
-import org.kwrench.geometry.double3.Double3
+import org.kwrench.color.colorspace.HSLColorSpace
+import org.kwrench.color.nextColor
 import org.kwrench.geometry.double3.ImmutableDouble3
 import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.math.Tau
+import org.kwrench.math.abs
+import org.kwrench.random.Rand
 import java.lang.Math.cos
 import java.lang.Math.sin
 
@@ -30,6 +35,7 @@ import java.lang.Math.sin
 class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
     lateinit var cameraSystem: CameraSystem
+    lateinit var lightSystem: LightSystem
 
 
     // TODO: Add coordinate transformation ops (scale & translate & maybe rotate - should probably be able to take function params.)
@@ -89,7 +95,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
     ).perturb(MutableDouble3(0.2, 0.3, 0.2), MutableDouble3(2.0, 1.0, 2.0))
 
 
-    val terrain = VoxelTerrain(planetFunction)
+    lateinit var terrain: VoxelTerrain
 
     override fun createProcessors(world: World) {
 
@@ -100,7 +106,10 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
         world.addSystem(CaptionSystem())
         cameraSystem = world.addSystem(CameraSystem(PerspectiveCamera()))
+        lightSystem = world.addSystem(LightSystem())
         world.addSystem(InputControlSystem())
+
+        terrain = VoxelTerrain(planetFunction, lightSystem)
 
         val cameraPosition = Vector3(0f, 5f, 30f)
         val lookAt = Vector3(0f, 0f, 0f)
@@ -131,6 +140,31 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val voxelRendererLayer = VoxelRendererLayer(terrain)
         initRenderingContext(voxelRendererLayer.context, world)
         world.createEntity(voxelRendererLayer)
+
+        addLights(world)
+    }
+
+    private fun addLights(world: World) {
+        val count = 1000
+        val random = Rand.createDefault()
+        for (i in 0 until count) {
+            // Light
+            val color = random.nextColor(
+                GdxColorType,
+                ImmutableDouble3(0.0, 0.0, 0.1),
+                ImmutableDouble3(1.0, 0.9, 0.9),
+                colorSpace = HSLColorSpace
+            )
+            val lightRadius = random.nextGaussian(0.0, 20.0).abs() + 1.0
+            val pointLight = SphericalLight(lightRadius,color)
+
+            // Location
+            val range = 1000.0
+            val location = Location(random.nextDouble(-range, range), random.nextDouble(-range, range), random.nextDouble(-range, range))
+
+            // Entity
+            world.createEntity(location, pointLight)
+        }
     }
 
     private fun initRenderingContext(renderingContext: RenderingContext3D, world: World) {

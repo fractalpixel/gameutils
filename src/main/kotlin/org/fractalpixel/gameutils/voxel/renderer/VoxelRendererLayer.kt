@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider
 import org.fractalpixel.gameutils.layer.Layer3D
 import org.fractalpixel.gameutils.libgdxutils.loadShaderProvider
+import org.fractalpixel.gameutils.lights.LightSystem
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
 import org.fractalpixel.gameutils.utils.RecyclingPool
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
