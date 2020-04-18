@@ -22,6 +22,8 @@ float worldMap(float p, float scale) {
 void main() {
 //    vec3 normal = v_normal;
 
+    // TODO: Use lights to light scene
+
     vec4 diffuse = vec4(0.3, 0.8, 0.1, 1.0);
 
     // DEBUG: Color based on world pos
