@@ -32,6 +32,50 @@ import org.kwrench.geometry.volume.Volume
 /**
  * Holds rendering data for a voxel chunk.
  */
+// TODO: Decide on way to handle lighting:
+//       A) Up to N lights per chunk, use the strongest.
+//          PRO: Easy to implement (libGDX default)
+//          CON: Causes nasty seams if there are many lights
+//          Conclusion: Unacceptable
+//       B) Deferred lighting / shading.
+//          PRO: Fast
+//          PRO: Uniform approach for all renderable geometry, moving entities cast shadows
+//          CON: Very complex to implement -- high risk of blocking project
+//          CON: Volumetric shading not included, requries separate solution
+//          CON: Still requires shadow map for shadows, further increasing complexity
+//          CON: Radiosity requires separate approach
+//       C) Volumetric lighting
+//            * store depth info for chunks
+//            - keep grid of sample points for a detail level (could maybe use blue-noise scattering if more efficient, but that could
+//              complicate match so not initially).  Perhaps about 1 sample point for each 2 or 4 voxels, if terrain is smooth (for
+//              buildings and other cubic, artificial voxels have 1 sample point per voxel?).
+//            * store light from x directions (e.g. every 45 or 22.5 degrees) for each sample point (or ideally more for better light direction resolution) - basically spherical cubemap
+//            * store fog color, opacity, scattering, reflectivity(?), flow direction, speed, current flow pos/phase, and texture type(s)/parameters for each sample point
+//            - raymarch in stored chunk depth info from each sample point towards each light that the sample point is in range of,
+//              calculate atmospheric effect from sample points on the way, and calculate umbra from distance function,
+//              assign attenuated light from the direction to the weighted directional components of the sample point (basically light texture)
+//            - when level updated, upload the sample point data to graphics card by updating a level specific texture? (or data object) with the data
+//              (a multi-channel, or several 3D textures could be most optimal, as they'd allow hardwware supported interpolation).
+//            - when rendering, step from the point in the fragment shader towards the camera along (interpolated) sample points,
+//              apply attenuation, scattered incoming light (use light map at the sample point), and the fog texture at the correct pos.
+//              (fog texture could perhaps be replaced by particle systems that drift along the flow lines for greater continuity of particles?  Or why not both.....  Or actually skip it until needed..)
+//            - Adaptive sampling point placement would be ideal (more closer to ground intersection, lesser further out - maybe use max of block size and distance at the location? And one sample for air chunks
+//            - As an additional feature, some kind of radiosity simulation could be run with this also..
+//            - Could it be possible to propagate the light with multiple iterations instead of raymarching each point to every light?  Expand from lights instead?  Maybe.  Maybe easier to do radiosity that way.  Would it be slower?  Maybe.
+//          PRO: Level of detail based volumetric shading with about same effort
+//          PRO: Soft shadows
+//          PRO: Lighting info for entities
+//          CON: No very sharp shadows possible (not a great loss, a bit of haze is nice and usual, only a drawback in vacuum, and on the other hand soft shadows almost free).
+//          CON: Need to store depth info for chunks instead of throwing it away - except if there are no intersections I guess -
+//               maybe just store values for corners and interpolate in that case, to get some kind of semi-sensible soft shadows.
+//          CON: Need to upload volumetric data to gfx card, but that would be required anyway for volumetric info
+//          CON: Need to raymarch chunks for each sample point, and recalulate all samples within radius when a light moves or terrain changes
+//          PRO: Radiosity seems possible with additional thought and work
+//          PRO: In fragment shader, you get lights pretty much by just interpolating the adjacent samples
+//          CON: Light direction is not very exact, so highly reflective materials like water not that good - but on the other hand the hemisphere can be reflected.
+//          CON: Entities do not cast shadows, unless they define some distance function and the lights are updated when they move.  They might fake some shadow though?
+//          CON: Buildings / blocky structures / recursive structures require integration with the distance function sampling (and atmosphere if they handle it? - maybe best if not?)
+//
 class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
     private val pos = MutableInt3()
