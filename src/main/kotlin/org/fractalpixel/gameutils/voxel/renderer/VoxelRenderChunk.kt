@@ -77,7 +77,8 @@ import org.kwrench.geometry.volume.Volume
 //              ALGORITHM PRO: Simple, local, scalable, can use lower LOD estimates as input, reacts 'automatically' to
 //                moving light sources and adding / removing light sources (number of light sources does not affect performance,
 //                and area lights are easy), iteratively improves illumination, while still doing major illumination fast enough to appear realtime (according to my napkin calculations..)
-//                Might make some level of clouds possible too, need to test (also would need to run cloud simulation in that case...)
+//                * Might make some level of clouds possible too, need to test (also would need to run cloud simulation in that case...)
+//                * For added bonus, add infrared color channel and track heating of objects due to sunlight / firelight... (algorithm deposits non-reflected intensity as heat to the entity / voxel) - (could also do heat vision shader in that case if it would make any sense...)
 //              ALGORITHM CON: Light direction not terribly accurate (hack: orient sample light sphere in direction of strongest light? -> correct and sharpish shadows for most dominant light source in each location)
 //              ALGORITHM CON: About 100 MB additional storage space with a quite sparse grid (evey fourth block) (assuming 10 levels of detail) and very coarse light information
 //          PRO: Level of detail based volumetric shading with about same effort
