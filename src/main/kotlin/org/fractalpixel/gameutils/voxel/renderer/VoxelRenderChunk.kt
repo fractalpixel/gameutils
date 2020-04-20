@@ -84,11 +84,11 @@ import org.kwrench.geometry.volume.Volume
 //          PRO: Global illumination info (at low resolution)
 //          CON: No very sharp shadows possible (not a great loss, a bit of haze is nice and usual, only a drawback in vacuum, and on the other hand soft shadows almost free).
 //          CON: Need to store depth info for chunks instead of throwing it away - except if there are no intersections I guess -
-//               maybe just store values for corners and interpolate in that case, to get some kind of semi-sensible soft shadows.
+//               maybe just store values for centers and interpolate in that case, to get some kind of semi-sensible soft shadows.
 //          CON: Need to upload volumetric data to gfx card, but that would be required anyway for volumetric info
 //          CON: Need to raymarch chunks for each sample point, and recalulate all samples within radius when a light moves or terrain changes
 //          PRO: Radiosity seems possible with additional thought and work
-//          PRO: In fragment shader, you get lights pretty much by just interpolating the adjacent samples
+//          PRO: In fragment shader, you get lights pretty much by just interpolating the adjacent samples -- but the fog between the fragment and the camera still need to be marched and voxel light data applied.
 //          CON: Light direction is not very exact, so highly reflective materials like water not that good - but on the other hand the hemisphere can be reflected.
 //          CON: Entities do not cast shadows, unless they define some distance function and the lights are updated when they move.  They might fake some shadow though?
 //          CON: Buildings / blocky structures / recursive structures require integration with the distance function sampling (and atmosphere if they handle it? - maybe best if not?)
