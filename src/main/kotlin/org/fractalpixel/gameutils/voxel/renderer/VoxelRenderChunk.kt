@@ -62,9 +62,26 @@ import org.kwrench.geometry.volume.Volume
 //            - Adaptive sampling point placement would be ideal (more closer to ground intersection, lesser further out - maybe use max of block size and distance at the location? And one sample for air chunks
 //            - As an additional feature, some kind of radiosity simulation could be run with this also..
 //            - Could it be possible to propagate the light with multiple iterations instead of raymarching each point to every light?  Expand from lights instead?  Maybe.  Maybe easier to do radiosity that way.  Would it be slower?  Maybe.
+//            - When new area scrolls in, use interpolated values of lower level of detail samples as initial sample values, while calculating better values.
+//            - Propagating radiosity information between samples should have a comparable (or slightly better, if there
+//              are many lights) performance to path tracing from each sample to each visible light,
+//              and would enable bouncing and scattering light.  It can also be progressively refined,
+//              especially if interpolated more rough samples can be used as a base.  A few chunks should be calculable in a frame.  And progressive refinement is nice to amortize.
+//            - ALGORITHM: For each sample, Read inputs from neighbours in our direction, attenuate, diffract,
+//              and if we are next to a surface, bounce them, calculate output for ourselves, put it in interleaved
+//              output buffer, switch buffers next iteration.  If a light overlaps us or is neighbouring us, interpolate
+//              it's intensity with neighbours and our pos, then add it's spherical radiance color function to our output.
+//              If we are at level of detail outer boundary, get light information from interpolated samples of lower level of detail.
+//              If we are at lowest level of detail outer boundary, get incoming surrounding spherical light radiance.
+//              ALGORITHM PRO: Simple, local, scalable, can use lower LOD estimates as input, reacts 'automatically' to
+//              moving light sources and adding / removing light sources (number of light sources does not affect performance,
+//              and area lights are easy), iteratively improves illumination, while still doing major illumination fast enough to appear realtime (according to my napkin calculations..)
+//              ALGORITHM CON: Light direction not terribly accurate (hack: orient sample light sphere in direction of strongest light? -> correct and sharpish shadows for most dominant light source in each location)
+//              ALGORITHM CON: About 100 MB additional storage space with a quite sparse grid (evey fourth block) (assuming 10 levels of detail) and very coarse light information
 //          PRO: Level of detail based volumetric shading with about same effort
 //          PRO: Soft shadows
 //          PRO: Lighting info for entities
+//          PRO: Global illumination info (at low resolution)
 //          CON: No very sharp shadows possible (not a great loss, a bit of haze is nice and usual, only a drawback in vacuum, and on the other hand soft shadows almost free).
 //          CON: Need to store depth info for chunks instead of throwing it away - except if there are no intersections I guess -
 //               maybe just store values for corners and interpolate in that case, to get some kind of semi-sensible soft shadows.
