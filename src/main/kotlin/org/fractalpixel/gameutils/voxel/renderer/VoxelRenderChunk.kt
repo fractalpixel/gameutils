@@ -73,9 +73,11 @@ import org.kwrench.geometry.volume.Volume
 //              it's intensity with neighbours and our pos, then add it's spherical radiance color function to our output.
 //              If we are at level of detail outer boundary, get light information from interpolated samples of lower level of detail.
 //              If we are at lowest level of detail outer boundary, get incoming surrounding spherical light radiance.
+//              Store data per chunk for better cache locality (edges need to get the data from other chunks still), also re-use datastructure (maybe lower resolution for air chunks (without heavy fog?) (shadows cast through them still suffer..))
 //              ALGORITHM PRO: Simple, local, scalable, can use lower LOD estimates as input, reacts 'automatically' to
-//              moving light sources and adding / removing light sources (number of light sources does not affect performance,
-//              and area lights are easy), iteratively improves illumination, while still doing major illumination fast enough to appear realtime (according to my napkin calculations..)
+//                moving light sources and adding / removing light sources (number of light sources does not affect performance,
+//                and area lights are easy), iteratively improves illumination, while still doing major illumination fast enough to appear realtime (according to my napkin calculations..)
+//                Might make some level of clouds possible too, need to test (also would need to run cloud simulation in that case...)
 //              ALGORITHM CON: Light direction not terribly accurate (hack: orient sample light sphere in direction of strongest light? -> correct and sharpish shadows for most dominant light source in each location)
 //              ALGORITHM CON: About 100 MB additional storage space with a quite sparse grid (evey fourth block) (assuming 10 levels of detail) and very coarse light information
 //          PRO: Level of detail based volumetric shading with about same effort
