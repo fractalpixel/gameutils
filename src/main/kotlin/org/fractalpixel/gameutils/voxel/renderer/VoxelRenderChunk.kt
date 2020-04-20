@@ -74,6 +74,9 @@ import org.kwrench.geometry.volume.Volume
 //              If we are at level of detail outer boundary, get light information from interpolated samples of lower level of detail.
 //              If we are at lowest level of detail outer boundary, get incoming surrounding spherical light radiance.
 //              Store data per chunk for better cache locality (edges need to get the data from other chunks still), also re-use datastructure (maybe lower resolution for air chunks (without heavy fog?) (shadows cast through them still suffer..))
+//              - To avoid light leaking, one alternative is to store distance to surfaces in different directions (raymarch),
+//                and only use a sampler when illuminating a vertex/fragment if it is ~closer or equal to the distance from the sampler.
+//                Maybe this could be done more memory efficiently?
 //              ALGORITHM PRO: Simple, local, scalable, can use lower LOD estimates as input, reacts 'automatically' to
 //                moving light sources and adding / removing light sources (number of light sources does not affect performance,
 //                and area lights are easy), iteratively improves illumination, while still doing major illumination fast enough to appear realtime (according to my napkin calculations..)
