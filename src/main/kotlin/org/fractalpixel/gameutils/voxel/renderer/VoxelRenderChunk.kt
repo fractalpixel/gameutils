@@ -111,6 +111,11 @@ import org.kwrench.geometry.volume.Volume
 //              the grid that the ray was cast from.
 //            - Interpolate combined cube along triangle surfaces, use in lighting equation.
 //            - For entities that should cast shadows / participate in media, define raymarching ops through them (trees could use leafy texture maps and green hue, ok if not accurate)
+//            - Should probably move the lightprobe data to GPU as a texture or similar.
+//            - For terrain chunks with ground, store a (sparse) array with short -value index of closest light probe,
+//              use to look up light probe when raymarching and for terrain.
+//            - Snap some lightprobes to terrain, store material reference and reflected light with them. (Maybe use
+//              vertexes of sparser chunk to place probes?  Or just place in grid, then move to closest vertex, then move away from nearby vertexes?
 //          PRO: Straightforward and fairly efficient, gives radiosity and volumetrics is possible, direct light is fast,
 //               shadows at vertex corner resolution (sharper near camera).  Can use lower LOD:s to initialize higher ones.
 //               Possible to just implement direct lights to start with.  With volumetric lights, entities are illuminated.
