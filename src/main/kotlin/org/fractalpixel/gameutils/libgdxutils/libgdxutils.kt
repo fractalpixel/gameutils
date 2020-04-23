@@ -494,9 +494,6 @@ fun loadTextFile(name: String): String {
     val file = File("./src/main/resources/$name")
     if (file.exists()) return file.readText()
 
-    // DEBUG: Force use of actual file, remove this later
-    throw IllegalStateException("Not found: $file")
-
     // Try to load internal
     return Gdx.files.internal(name).readString()
 }

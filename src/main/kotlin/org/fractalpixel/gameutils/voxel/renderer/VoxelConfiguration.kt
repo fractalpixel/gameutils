@@ -36,7 +36,7 @@ import kotlin.math.pow
 // FEATURE: More easily configurable resolution settings, from low res potato to high end machine,
 //       in such a way that relevant terrain features are still visible close up, and rough outlines far away.
 //       Probably level size and most detailed level are the ones to tune, as well as detail level count a bit.
-// TODO: Change detail level count to mostRoughDetailLevel or similar instead.
+// REFACTOR: Change detail level count to mostRoughDetailLevel or similar instead.
 // FEATURE: Adaptively adjust chunk size based on performance?  To some degree at least?
 // BUG: There are sometimes chunks that don't get released, more clearly e.g. with levelCount 3, mostDetailed 0, levelSize 8, chunk size 24
 data class VoxelConfiguration(

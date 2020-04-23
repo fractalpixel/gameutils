@@ -8,6 +8,7 @@ import org.fractalpixel.gameutils.voxel.distancefunction.utils.DistanceBounds
 import org.junit.Test
 import org.kwrench.geometry.volume.Volume
 import kotlin.test.assertEquals
+import kotlin.test.fail
 
 class CompilingDistanceFunTest {
 
@@ -34,10 +35,10 @@ class TestDF(): CompilingDistanceFun() {
         leadingSeam: Int,
         trailingSeam: Int
     ) {
-        TODO("not implemented")
+        fail("Should not be called in this test")
     }
 
     override fun calculateBounds(volume: Volume, sampleSize: Double, bounds: DistanceBounds) {
-        TODO("not implemented")
+        fail("Should not be called in this test")
     }
 }

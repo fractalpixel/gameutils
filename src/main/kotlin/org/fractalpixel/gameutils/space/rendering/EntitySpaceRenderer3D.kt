@@ -1,5 +1,6 @@
 package org.fractalpixel.gameutils.space.rendering
 
+import com.badlogic.gdx.graphics.g3d.utils.ShaderProvider
 import org.entityflakes.World
 import org.entityflakes.entitymanager.ComponentRef
 import org.fractalpixel.gameutils.appearance3d.EntityRenderer3D
@@ -18,7 +19,8 @@ import org.kwrench.geometry.volume.Volume
  * Renders a 3D view of an entity space that is in the same entity as this renderer.
  */
 class EntitySpaceRenderer3D(val entityRenderer: EntityRenderer3D = DefaultEntityRenderer3D(),
-                            var viewRadius: Float = 10000f): Layer3D() {
+                            var viewRadius: Float = 10000f,
+                            shaderProvider: ShaderProvider? = null): Layer3D(shaderProvider) {
 
     private val visibleWorld = MutableVolume()
     private val entityRenderList = ArrayList<Location>()

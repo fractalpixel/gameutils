@@ -98,7 +98,26 @@ import org.kwrench.geometry.volume.Volume
 //          CON: Light direction is not very exact, so highly reflective materials like water not that good - but on the other hand the hemisphere can be reflected.
 //          CON: Entities do not cast shadows, unless they define some distance function and the lights are updated when they move.  They might fake some shadow though?
 //          CON: Buildings / blocky structures / recursive structures require integration with the distance function sampling (and atmosphere if they handle it? - maybe best if not?)
-//
+//       D) Sampling pos at vertexes, later in air for volumetric effects <- SELECTED
+//            - Spherical sampling, color + intensity, sampling cube with 4x4 grids per side or so (22.5 degree resolution)
+//            - One sampling cube for direct light (raymarch towards lights in range, add light if reached) and reflections
+//              of direct light from surface (based on incoming light and surface params), update when lights / surface changes
+//            - One sampling cube for bounced light, over time shoot rays from random grids in random directions,
+//              raymarch to find surface (use interpolated or just closest sampling grids to get color & intensity in
+//              direction back along ray) or sky, mix existing (e.g. 80%) and new (e.g. 20%) color and intensity for
+//              the grid that the ray was cast from.
+//            - Interpolate combined cube along triangle surfaces, use in lighting equation.
+//            - For entities that should cast shadows / participate in media, define raymarching ops through them (trees could use leafy texture maps and green hue, ok if not accurate)
+//          PRO: Straightforward and fairly efficient, gives radiosity and volumetrics is possible, direct light is fast,
+//               shadows at vertex corner resolution (sharper near camera).  Can use lower LOD:s to initialize higher ones.
+//               Possible to just implement direct lights to start with.  With volumetric lights, entities are illuminated.
+//          CON: Raymarching and light attenuation & reflection & radiosity happens on CPU side, but should at least
+//               be possible to multithread.  Clouds probably need custom implementation.
+//               Volumetric light pretty heavy, adaptive resolution could help.
+//               About 50 MB of memory needed for the light information for terrain surface - not too bad - but info on
+//               whether a block is air or surface/solid needs to be stored too, ideally distance but that would be
+//               too much data probably? - bitvector would not be that much extra, but penumbra would need the distance...
+//               (perhaps interpolate distance from corners / centers?)
 class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
     private val pos = MutableInt3()

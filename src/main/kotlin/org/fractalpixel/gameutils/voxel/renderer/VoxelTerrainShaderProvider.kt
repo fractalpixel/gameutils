@@ -2,12 +2,18 @@ package org.fractalpixel.gameutils.voxel.renderer
 
 import com.badlogic.gdx.graphics.g3d.Renderable
 import com.badlogic.gdx.graphics.g3d.Shader
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader
 import com.badlogic.gdx.graphics.g3d.utils.BaseShaderProvider
 import org.fractalpixel.gameutils.libgdxutils.loadShaderProgram
 import org.fractalpixel.gameutils.libgdxutils.loadShaderProvider
+import org.fractalpixel.gameutils.libgdxutils.loadTextFile
 
 class VoxelTerrainShaderProvider(): BaseShaderProvider() {
+
+    private val defaultVertexShader = loadTextFile("shaders/default.vertex.glsl")
+    private val defaultFragmentShader = loadTextFile("shaders/default.fragment.glsl")
+    private val defaultShaderConfig = DefaultShader.Config(defaultVertexShader, defaultFragmentShader)
 
     override fun createShader(renderable: Renderable): Shader {
         return when {
@@ -21,7 +27,7 @@ class VoxelTerrainShaderProvider(): BaseShaderProvider() {
             }
             else -> {
                 // Create a new default shader for this type of renderable
-                return DefaultShader(renderable, DefaultShader.Config(), loadShaderProgram("shaders/default"))
+                return DefaultShader(renderable, defaultShaderConfig)
             }
         }
     }

@@ -29,6 +29,7 @@ class BruteForceEntitySpace(): EntitySpace {
     override fun forEachEntity(volume: Volume,
                                entityVisitor: (entity: Entity, entityLocation: Location) -> Unit) {
         for (entityLocation in entityLocations) {
+            // TODO: Include entity radius when checking whether the volume contains the entity
             if (volume.contains(entityLocation)) {
                 val entity = entityLocation.entity
                 if (entity != null) {

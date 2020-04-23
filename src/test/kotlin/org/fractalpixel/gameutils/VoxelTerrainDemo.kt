@@ -4,12 +4,16 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.PerspectiveCamera
+import com.badlogic.gdx.graphics.VertexAttributes
 import com.badlogic.gdx.graphics.g3d.Environment
+import com.badlogic.gdx.graphics.g3d.Material
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.environment.PointLight
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.math.Vector3
 import org.entityflakes.World
+import org.fractalpixel.gameutils.appearance3d.ModelAppearance
 import org.fractalpixel.gameutils.camera.CameraSystem
 import org.fractalpixel.gameutils.captionservice.CaptionSystem
 import org.fractalpixel.gameutils.controls.InputControlSystem
@@ -17,7 +21,10 @@ import org.fractalpixel.gameutils.libgdxutils.GdxColorType
 import org.fractalpixel.gameutils.lights.LightSystem
 import org.fractalpixel.gameutils.lights.SphericalLight
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
+import org.fractalpixel.gameutils.space.BruteForceEntitySpace
+import org.fractalpixel.gameutils.space.EntitySpace
 import org.fractalpixel.gameutils.space.Location
+import org.fractalpixel.gameutils.space.rendering.EntitySpaceRenderer3D
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
 import org.fractalpixel.gameutils.voxel.distancefunction.*
 import org.fractalpixel.gameutils.voxel.renderer.VoxelRendererLayer
@@ -28,6 +35,7 @@ import org.kwrench.geometry.double3.MutableDouble3
 import org.kwrench.math.Tau
 import org.kwrench.math.abs
 import org.kwrench.random.Rand
+import org.kwrench.strings.toSymbol
 import java.lang.Math.cos
 import java.lang.Math.sin
 
@@ -36,6 +44,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
     lateinit var cameraSystem: CameraSystem
     lateinit var lightSystem: LightSystem
+    lateinit var space: BruteForceEntitySpace
 
 
     // TODO: Add coordinate transformation ops (scale & translate & maybe rotate - should probably be able to take function params.)
@@ -115,7 +124,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val lookAt = Vector3(0f, 0f, 0f)
         cameraSystem.set(cameraPosition, lookAt)
 
-        cameraSystem.nearClippingPlane = 0.01f
+        cameraSystem.nearClippingPlane = 0.001f
         cameraSystem.farClippingPlane = 100_000f
 
         // TODO: Mouse & keyboard controlled camera
@@ -137,9 +146,26 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
     }
 
     override fun setupWorld(world: World) {
+        // REFACTOR: Make it easier to use the same camera and/or shaders in several layers - set defaults in LayerManager?  Or group layers?
+        // REFACTOR: Pass near and far clipping plane to shader.  Use near clipping plane as C (?).
+
+        // Voxel terrain
         val voxelRendererLayer = VoxelRendererLayer(terrain)
+        voxelRendererLayer.context.camera = cameraSystem.camera
+        voxelRendererLayer.depth = 1.0
+        voxelRendererLayer.clearColorBufferToColor = Color.DARK_GRAY
         initRenderingContext(voxelRendererLayer.context, world)
         world.createEntity(voxelRendererLayer)
+
+        // Entity space & rendering of the entities in it
+        space = BruteForceEntitySpace()
+//        val entitySpaceRenderer3D = EntitySpaceRenderer3D()
+        val entitySpaceRenderer3D = EntitySpaceRenderer3D(shaderProvider = voxelRendererLayer.context.shaderProvider)
+        entitySpaceRenderer3D.context.camera = cameraSystem.camera
+        entitySpaceRenderer3D.clearDepthBuffer = false
+        entitySpaceRenderer3D.depth = 2.0
+        val spaceEntity = world.createEntity(space, entitySpaceRenderer3D)
+        world.tagEntity(spaceEntity, "space".toSymbol())
 
         addLights(world)
     }
@@ -160,10 +186,17 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
             // Location
             val range = 1000.0
-            val location = Location(random.nextDouble(-range, range), random.nextDouble(-range, range), random.nextDouble(-range, range))
+            val location = Location(random.nextDouble(-range, range), random.nextDouble(-range, range), random.nextDouble(-range, range), space)
+
+            // Appearance
+            val size = 50f
+            val material = Material(ColorAttribute.createDiffuse(color))
+            val attributes = VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal
+            val model = ModelBuilder().createSphere(size, size, size, 12, 12, material, attributes.toLong())
+            val appearance = ModelAppearance(model)
 
             // Entity
-            world.createEntity(location, pointLight)
+            world.createEntity(location, pointLight, appearance)
         }
     }
 
@@ -183,9 +216,6 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
 
         // Bump priority of OpenGL thread to the max, to avoid UI freezes while calculation is ongoing in other threads.
         Thread.currentThread().priority = Thread.MAX_PRIORITY
-
-        // CLEANUP: Remove later?
-        // println("Buffer format: " + Gdx.graphics.bufferFormat)
 
         renderingContext.camera = cameraSystem.camera
     }
