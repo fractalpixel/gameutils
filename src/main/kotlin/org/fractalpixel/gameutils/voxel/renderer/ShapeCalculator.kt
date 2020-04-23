@@ -62,6 +62,9 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
             // Obtain shape builder
             val shapeBuilder = shapeBuilderPool.obtain()
 
+            // Use wireframe for shape if debug wireframe view is on (not possible to toggle quickly without rebuilding shapes)
+            shapeBuilder.wireframe = configuration.debugWireframe
+
             // Iterate voxel space
             val sideCellCount = configuration.chunkCornersSize - 1
             val indexStepDelta = ImmutableInt3(1, sideCellCount, (sideCellCount) * (sideCellCount))

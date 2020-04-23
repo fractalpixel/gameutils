@@ -17,9 +17,11 @@ import org.fractalpixel.gameutils.lights.LightProbes
 /**
  * Utility class that is used to construct meshes by adding vertexes and faces one by one.
  * Not thread safe (wrap in ThreadLocal or similar at the use site if thread safety is needed).
+ *
+ * If [wireframe] is true, will create vertexes for drawing with GL_LINES instead of GL_TRIANGLES.
  */
 // TODO: Add support for other vertex attributes.
-class ShapeBuilder {
+class ShapeBuilder(var wireframe: Boolean = false) {
 
     /**
      * Contains the transformation to apply to newly added positions.
@@ -144,15 +146,11 @@ class ShapeBuilder {
         if (a != b && a != c && b != c) {
 
             if (!invertFace || twoSided) {
-                indexes.add(a)
-                indexes.add(b)
-                indexes.add(c)
+                addTriangleIndexes(a, b, c)
             }
 
             if (invertFace || twoSided) {
-                indexes.add(a)
-                indexes.add(c)
-                indexes.add(b)
+                addTriangleIndexes(a, c, b)
             }
 
             if (updateNormals) {
@@ -176,6 +174,26 @@ class ShapeBuilder {
         }
     }
 
+    private fun addTriangleIndexes(a: Short, b: Short, c: Short) {
+        if (wireframe) {
+            // Line segments
+            indexes.add(a)
+            indexes.add(b)
+
+            indexes.add(b)
+            indexes.add(c)
+
+            indexes.add(c)
+            indexes.add(a)
+        }
+        else {
+            // Normal triangle
+            indexes.add(a)
+            indexes.add(b)
+            indexes.add(c)
+        }
+    }
+
     /**
      * Creates a mesh from the shape defined in this shape builder.
      */
@@ -184,8 +202,8 @@ class ShapeBuilder {
                    clearAfterwards: Boolean = true): Mesh {
 
         val mesh = Mesh(isStatic,
-             vertexData.size / vertexEntrySize,
-                        indexes.size,
+              vertexData.size / vertexEntrySize,
+               indexes.size,
                         VertexAttribute.Position(),
                         VertexAttribute.Normal())
 
@@ -225,8 +243,9 @@ class ShapeBuilder {
         val mesh = createMesh(isStatic, normalizeNormals, clearAfterwards)
 
         // Create model
+        val primitive = if (wireframe) GL20.GL_LINES else GL20.GL_TRIANGLES
         modelBuilder.begin()
-        modelBuilder.part(id, mesh, GL20.GL_TRIANGLES, material)
+        modelBuilder.part(id, mesh, primitive, material)
         return modelBuilder.end()
     }
 
@@ -260,6 +279,8 @@ class ShapeBuilder {
     /**
      * Creates and initializes a set of light probes for each vertex in the mesh
      */
+    // TODO: Maybe only create for every N:th or so, but link each vertex to index of 3 or 4 closest light probes?
+    //       Or distribute probes evenly using some relaxation algorithm?
     fun createLightProbes(): LightProbes {
         val pos = Vector3()
         val normal = Vector3()

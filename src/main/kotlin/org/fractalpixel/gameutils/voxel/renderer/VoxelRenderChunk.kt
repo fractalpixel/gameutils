@@ -1,5 +1,6 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
@@ -295,7 +296,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
                 corner.add(configuration.blockTypeDebugLineSpacing * sideLen)
                 sideLen *= (1f - 2f * configuration.blockTypeDebugLineSpacing)
                 modelBuilder.buildWireframeBoxPart(
-                    corner, sideLen, color = wireframeColor, id = wireframeId
+                    corner, sideLen, color = wireframeColor, id = wireframeId, dashed = true, segments = configuration.chunkSize
                 )
             }
         }
@@ -307,7 +308,8 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         if (createdMesh.numVertices > 0 && createdMesh.numIndices > 0) {
             val material = Material()
             material.set(ColorAttribute.createDiffuse(0.8f * debugColor.r, 0.8f * debugColor.g, 0.8f * debugColor.b, 1f))
-            modelBuilder.part(voxelTerrainChunkId, createdMesh, GL20.GL_TRIANGLES, material)
+            val primitive = if (configuration.debugWireframe) GL20.GL_LINES else GL20.GL_TRIANGLES
+            modelBuilder.part(voxelTerrainChunkId, createdMesh, primitive, material)
         }
 
         // Create model from chunk shape and wireframe

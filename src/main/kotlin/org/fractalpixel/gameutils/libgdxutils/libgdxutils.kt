@@ -452,9 +452,10 @@ fun ModelBuilder.buildWireframeBoxPart(position: Vector3,
                                        sizeY: Float = sizeX,
                                        sizeZ: Float = sizeX,
                                        color: Color = Color(0.1f, 0.5f, 0.1f, 1f),
-                                       segments: Int = 8,
+                                       segments: Int = 16,
                                        center: Boolean = false,
                                        onlyShowCorners: Boolean = false,
+                                       dashed: Boolean = false,
                                        doBeginEnd: Boolean = false,
                                        id: String = "wireframe" ) {
     if (doBeginEnd) begin()
@@ -477,18 +478,18 @@ fun ModelBuilder.buildWireframeBoxPart(position: Vector3,
     val vxyz = corner.cpy().add(sizeX, sizeY, sizeZ)
 
     // Lines
-    gridBuilder.segmentedLine(corner, vx, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(corner, vy, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(corner, vz, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(vx, vxy, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(vx, vxz, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(vy, vxy, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(vy, vyz, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(vz, vxz, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(vz, vyz, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(vxy, vxyz, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(vyz, vxyz, segments, onlyShowCorners)
-    gridBuilder.segmentedLine(vxz, vxyz, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(corner, vx, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(corner, vy, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(corner, vz, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(vx, vxy, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(vx, vxz, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(vy, vxy, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(vy, vyz, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(vz, vxz, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(vz, vyz, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(vxy, vxyz, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(vyz, vxyz, segments, onlyShowCorners, dashed)
+    gridBuilder.segmentedLine(vxz, vxyz, segments, onlyShowCorners, dashed)
 
     if (doBeginEnd) end()
 }
@@ -496,13 +497,16 @@ fun ModelBuilder.buildWireframeBoxPart(position: Vector3,
 /**
  * Creates a line that consists of many segments.
  */
-fun MeshPartBuilder.segmentedLine(start: Vector3, end: Vector3, segments: Int, onlyIncludeFirstAndLast: Boolean = false) {
+fun MeshPartBuilder.segmentedLine(start: Vector3, end: Vector3, segments: Int, onlyIncludeFirstAndLast: Boolean = false, dashed: Boolean = false) {
     val p1 = Vector3()
     val p2 = Vector3()
 
     for (i in 0 until segments) {
         // Determine if the segment should be rendered
-        if (!onlyIncludeFirstAndLast || segments <= 3 || i == 0 || i == segments-1) {
+        var include = true
+        if (onlyIncludeFirstAndLast && i > 0 && i < segments - 1) include = false
+        else if (dashed && i % 2 == 1) include = false
+        if (include) {
             // Determine start and end of this segment
             val relativePos1 = relPos(i, 0, segments)
             val relativePos2 = relPos(i+1, 0, segments)

@@ -40,11 +40,12 @@ import kotlin.math.pow
 // FEATURE: Adaptively adjust chunk size based on performance?  To some degree at least?
 // BUG: There are sometimes chunks that don't get released, more clearly e.g. with levelCount 3, mostDetailed 0, levelSize 8, chunk size 24
 data class VoxelConfiguration(
-    val detailLevelCount: Int = 3, //10,
+    val detailLevelCount: Int = 4, //10,
     val mostDetailedDetailLevel: Int = 2, //-2,
     val chunkSize: Int = 28, //24,
     val levelSize: Int = 8, // FIXME: Lot of overlapping layers rendered with low values..
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
+    val debugWireframe: Boolean = true,
     val debugLines: Boolean = true,
     val debugLinesForEmptyBlocks: Boolean = false,
     val debugOutlines: Boolean = false,
