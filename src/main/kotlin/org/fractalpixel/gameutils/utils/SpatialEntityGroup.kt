@@ -9,6 +9,7 @@ import org.entityflakes.entitymanager.ComponentRef
 import org.entityflakes.entitymanager.EntityManager
 import org.fractalpixel.gameutils.space.Location
 import org.kwrench.collections.bag.Bag
+import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.volume.Volume
 import java.util.ArrayList
 
@@ -31,9 +32,22 @@ class SpatialEntityGroup(val filter: EntityFilter, entityManager: EntityManager)
         // DEBUG: Just brute force for now
         for (entity in entities_) {
             val location = locationRef[entity]
-            // TODO: Add containsWithRadius or similar? (basically distance to point squared < radius squared)
-            if (volume.contains(location)) {
+            if (volume.containsWithinRadius(location, location.diameter * 0.5)) {
                 entityVisitor(entity)
+            }
+        }
+    }
+
+    fun forEachEntityOverlapping(pos: Double3, entityVisitor: (Entity, squaredDistance: Double) -> Unit) {
+        // DEBUG: Just brute force for now
+        for (entity in entities_) {
+            val location = locationRef[entity]
+
+            // Check if the point is within the bounding sphere of the location
+            val squaredDistance = location.distanceSquaredTo(pos)
+            val radius = location.radius
+            if (squaredDistance <= radius * radius) {
+                entityVisitor(entity, squaredDistance)
             }
         }
     }
@@ -124,5 +138,6 @@ class SpatialEntityGroup(val filter: EntityFilter, entityManager: EntityManager)
             listener.onEntityRemoved(entity)
         }
     }
+
 
 }

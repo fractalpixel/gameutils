@@ -36,5 +36,10 @@ interface Space: PolymorphicComponent {
                                     oldY: Double,
                                     oldZ: Double)
 
+    /**
+     * Called when the bounding sphere diameter of a located entity changes.
+     */
+    fun updateLocatedEntityDiameter(location: Location, oldDiameter: Double)
+
     override val componentCategory: Class<out Component> get() = Space::class.java
 }

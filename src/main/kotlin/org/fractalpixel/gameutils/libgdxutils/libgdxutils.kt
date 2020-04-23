@@ -37,6 +37,7 @@ import org.kwrench.geometry.volume.MutableVolume
 import org.kwrench.geometry.volume.Volume
 import org.kwrench.math.TauFloat
 import org.kwrench.math.fastFloor
+import org.kwrench.math.relPos
 import org.kwrench.math.round
 import java.io.File
 import java.io.FileReader
@@ -443,13 +444,17 @@ fun SpriteBatch.draw(region: TextureRegion,
 
 /**
  * Creates a wireframe axis-aligned box for debugging purposes.
+ * Supports construction out of multiple [segments], as the used z-buffer transformation doesn't deal well with long
+ * shapes near the camera.
  */
 fun ModelBuilder.buildWireframeBoxPart(position: Vector3,
                                        sizeX : Float,
                                        sizeY: Float = sizeX,
                                        sizeZ: Float = sizeX,
                                        color: Color = Color(0.1f, 0.5f, 0.1f, 1f),
+                                       segments: Int = 8,
                                        center: Boolean = false,
+                                       onlyShowCorners: Boolean = false,
                                        doBeginEnd: Boolean = false,
                                        id: String = "wireframe" ) {
     if (doBeginEnd) begin()
@@ -472,22 +477,42 @@ fun ModelBuilder.buildWireframeBoxPart(position: Vector3,
     val vxyz = corner.cpy().add(sizeX, sizeY, sizeZ)
 
     // Lines
-    gridBuilder.line(corner, vx)
-    gridBuilder.line(corner, vy)
-    gridBuilder.line(corner, vz)
-    gridBuilder.line(vx, vxy)
-    gridBuilder.line(vx, vxz)
-    gridBuilder.line(vy, vxy)
-    gridBuilder.line(vy, vyz)
-    gridBuilder.line(vz, vxz)
-    gridBuilder.line(vz, vyz)
-    gridBuilder.line(vxy, vxyz)
-    gridBuilder.line(vyz, vxyz)
-    gridBuilder.line(vxz, vxyz)
+    gridBuilder.segmentedLine(corner, vx, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(corner, vy, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(corner, vz, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(vx, vxy, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(vx, vxz, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(vy, vxy, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(vy, vyz, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(vz, vxz, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(vz, vyz, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(vxy, vxyz, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(vyz, vxyz, segments, onlyShowCorners)
+    gridBuilder.segmentedLine(vxz, vxyz, segments, onlyShowCorners)
 
     if (doBeginEnd) end()
 }
 
+/**
+ * Creates a line that consists of many segments.
+ */
+fun MeshPartBuilder.segmentedLine(start: Vector3, end: Vector3, segments: Int, onlyIncludeFirstAndLast: Boolean = false) {
+    val p1 = Vector3()
+    val p2 = Vector3()
+
+    for (i in 0 until segments) {
+        // Determine if the segment should be rendered
+        if (!onlyIncludeFirstAndLast || segments <= 3 || i == 0 || i == segments-1) {
+            // Determine start and end of this segment
+            val relativePos1 = relPos(i, 0, segments)
+            val relativePos2 = relPos(i+1, 0, segments)
+            p1.set(start).lerp(end, relativePos1.toFloat())
+            p2.set(start).lerp(end, relativePos2.toFloat())
+
+            line(p1, p2)
+        }
+    }
+}
 
 fun loadTextFile(name: String): String {
     // Try to find in resources dir

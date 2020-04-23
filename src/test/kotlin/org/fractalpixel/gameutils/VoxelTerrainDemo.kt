@@ -181,15 +181,15 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
                 ImmutableDouble3(1.0, 0.9, 0.9),
                 colorSpace = HSLColorSpace
             )
-            val lightRadius = random.nextGaussian(0.0, 20.0).abs() + 1.0
+            val lightRadius = random.nextGaussian(200.0, 100.0).abs() + 50.0
             val pointLight = SphericalLight(lightRadius,color)
 
             // Location
             val range = 1000.0
-            val location = Location(random.nextDouble(-range, range), random.nextDouble(-range, range), random.nextDouble(-range, range), space)
+            val location = Location(random.nextDouble(-range, range), random.nextDouble(-range, range), random.nextDouble(-range, range), lightRadius*2.0, space)
 
             // Appearance
-            val size = 50f
+            val size = (lightRadius / (lightRadius + 10.0) * 10.0).toFloat()
             val material = Material(ColorAttribute.createDiffuse(color))
             val attributes = VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal
             val model = ModelBuilder().createSphere(size, size, size, 12, 12, material, attributes.toLong())

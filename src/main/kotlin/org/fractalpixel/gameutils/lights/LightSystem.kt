@@ -8,6 +8,7 @@ import org.entityflakes.entitymanager.ComponentRef
 import org.entityflakes.system.SystemBase
 import org.fractalpixel.gameutils.space.Location
 import org.fractalpixel.gameutils.utils.SpatialEntityGroup
+import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.volume.Volume
 
 /**
@@ -42,6 +43,17 @@ class LightSystem(): SystemBase(), LightProvider {
             val location = locationRef[entity]
             val sphericalLight = sphericalLightRef[entity]
             visitor(entity, location, sphericalLight)
+        }
+    }
+
+    override fun forEachPointLightInRange(
+        pos: Double3,
+        visitor: (entity: Entity, location: Location, light: SphericalLight, squaredDistance: Double) -> Unit
+    ) {
+        pointLights.forEachEntityOverlapping(pos) {entity, squaredDistance ->
+            val location = locationRef[entity]
+            val sphericalLight = sphericalLightRef[entity]
+            visitor(entity, location, sphericalLight, squaredDistance)
         }
     }
 

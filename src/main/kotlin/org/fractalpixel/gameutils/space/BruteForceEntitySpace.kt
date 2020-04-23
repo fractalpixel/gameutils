@@ -26,6 +26,10 @@ class BruteForceEntitySpace(): EntitySpace {
         // Ignored
     }
 
+    override fun updateLocatedEntityDiameter(location: Location, oldDiameter: Double) {
+        // Ignored
+    }
+
     override fun forEachEntity(volume: Volume,
                                entityVisitor: (entity: Entity, entityLocation: Location) -> Unit) {
         for (entityLocation in entityLocations) {

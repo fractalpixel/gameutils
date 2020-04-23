@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector3
 import org.entityflakes.Entity
 import org.entityflakes.ReusableComponentBase
 import org.kwrench.geometry.double3.Double3
+import java.lang.IllegalArgumentException
 
 
 /**
@@ -11,24 +12,26 @@ import org.kwrench.geometry.double3.Double3
  * @param initialX the initial position of the entity.
  * @param initialY the initial position of the entity.
  * @param initialZ the initial position of the entity.
+ * @param initialDiameter the initial bounding diameter of the entity, or 0 if not relevant.
  * @param initialSpace the space that the entity is initially located in, or null if nowhere.
  */
-// TODO: Add bounding sphere for entity occupying the location, for easier storage in space implementations
-// TODO: Could also store orientation?
 // TODO: Add function to get/set/modify world position of entity by applying transformations for any spaces it is located in
 class Location(initialX: Double = 0.0,
                initialY: Double = 0.0,
                initialZ: Double = 0.0,
+               initialDiameter: Double = 0.0,
                initialSpace: Space? = null): ReusableComponentBase(), Double3 {
 
     /**
      * @param initialPos the initial position of the entity.
      * @param initialSpace the space that the entity is initially located in, or null if nowhere.
      */
-    constructor(initialPos: Double3? = null,
-                initialSpace: Space? = null): this(initialPos?.x ?: 0.0,
-                                                   initialPos?.y ?: 0.0,
-                                                   initialPos?.z ?: 0.0,
+    constructor(initialPos: Double3,
+                initialDiameter: Double = 0.0,
+                initialSpace: Space? = null): this(initialPos.x,
+                                                   initialPos.y,
+                                                   initialPos.z,
+                                                   initialDiameter,
                                                    initialSpace)
 
     // Position
@@ -38,6 +41,12 @@ class Location(initialX: Double = 0.0,
         private set
     override var z: Double = initialZ
         private set
+
+    // Diameter
+    var diameter: Double = initialDiameter
+        private set
+
+    val radius: Double get() = diameter * 0.5
 
     /**
      * The space that the entity is currently located in.
@@ -85,6 +94,18 @@ class Location(initialX: Double = 0.0,
 
             // Notify space about move
             if (isInitialized()) space?.updateLocatedEntityPosition(this, oldX, oldY, oldZ)
+        }
+    }
+
+    fun setBoundingSphereDiameter(newDiameter: Double) {
+        if (diameter != newDiameter) {
+            if (newDiameter.isNaN() || newDiameter < 0.0) throw IllegalArgumentException("The diameter should be positive, but was $newDiameter")
+
+            val oldDiameter = diameter
+            diameter = newDiameter
+
+            // Notify space about diameter change
+            if (isInitialized()) space?.updateLocatedEntityDiameter(this, oldDiameter)
         }
     }
 

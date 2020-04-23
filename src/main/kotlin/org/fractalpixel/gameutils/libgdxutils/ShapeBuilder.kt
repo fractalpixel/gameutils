@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.FloatArray
 import com.badlogic.gdx.utils.ShortArray
+import org.fractalpixel.gameutils.lights.LightProbes
 
 
 /**
@@ -254,6 +255,21 @@ class ShapeBuilder {
         indexes.clear()
         nextVertexId = 0
         triangleCount_ = 0
+    }
+
+    /**
+     * Creates and initializes a set of light probes for each vertex in the mesh
+     */
+    fun createLightProbes(): LightProbes {
+        val pos = Vector3()
+        val normal = Vector3()
+        val probes = LightProbes(vertexCount)
+        for (i in 0 until vertexCount) {
+            getPos(i.toShort(), pos)
+            getNormal(i.toShort(), normal)
+            probes.addProbe(pos, normal)
+        }
+        return probes
     }
 
 }

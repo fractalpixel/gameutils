@@ -1,5 +1,6 @@
 package org.fractalpixel.gameutils.layer
 
+import com.badlogic.gdx.Gdx
 import org.entityflakes.Entity
 import org.entityflakes.entitymanager.ComponentRef
 import org.entityflakes.system.EntitySystemBase

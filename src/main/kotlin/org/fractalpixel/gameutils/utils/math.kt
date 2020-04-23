@@ -12,9 +12,9 @@ import org.kwrench.geometry.intvolume.MutableIntVolume
 import org.kwrench.geometry.volume.MutableVolume
 import org.kwrench.geometry.volume.Volume
 import org.kwrench.math.*
-import java.lang.IllegalArgumentException
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 // TODO: Move all generic extension functions to utility library
@@ -190,15 +190,34 @@ fun MutableVolume.translate(offset: Double3): MutableVolume {
 }
 
 /**
+ * @return true if the point is within the Volume or [radius] distance from the volume.
+ * [radius] should be zero or positive, throws exception if it is negative or NaN.
+ */
+fun Volume.containsWithinRadius(p: Double3, radius: Double): Boolean {
+    if (radius.isNaN()) throw IllegalArgumentException("Radius was NaN (not a number)")
+    if (radius < 0.0) throw IllegalArgumentException("Negative radius is not supported (was $radius)")
+    return distanceToPointSquared(p) <= radius * radius
+}
+
+/**
+ * Returns the shortest distance from the volume to the point squared (this is a bit faster to calculate than non-squared).
+ * If the point is inside the volume, 0 is returned.
+ * The volume being empty is not checked for, the user should check for it if it has relevance.
+ */
+fun Volume.distanceToPointSquared(p: Double3): Double {
+    val dx = max(minX - p.x, 0.0, p.x - maxX)
+    val dy = max(minY - p.y, 0.0, p.y - maxY)
+    val dz = max(minZ - p.z, 0.0, p.z - maxZ)
+    return dx*dx + dy*dy + dz*dz
+}
+
+/**
  * Returns the shortest distance from the volume to the point.
  * If the point is inside the volume, 0 is returned.
  * The volume being empty is not checked for, the user should check for it if it has relevance.
  */
 fun Volume.distanceToPoint(p: Double3): Double {
-    val dx = max(minX - p.x, 0.0, p.x - maxX)
-    val dy = max(minY - p.y, 0.0, p.y - maxY)
-    val dz = max(minZ - p.z, 0.0, p.z - maxZ)
-    return sqrt(dx*dx + dy*dy + dz*dz)
+    return sqrt(distanceToPointSquared(p))
 }
 
 /**
@@ -392,3 +411,137 @@ inline fun Double3.maxCoordinate(): Double = max(x, y, z)
  * The smallest of x, y or z.
  */
 inline fun Double3.minCoordinate(): Double = min(x, y, z)
+
+
+/**
+ * Represents a position on a cube map.
+ * [side] is as following: 0 = positive X, 1 = negative x, 2 = positive y, 3 = negative y, 4 = positive z, 5 = negative z.
+ * [u] and [v] range from 0 to 1 on each face.
+ */
+data class CubeMapPos(var side: Int = 0,
+                      var u: Double = 0.0,
+                      var v: Double = 0.0) {
+
+    /**
+     * Get a direction vector representing this position on a cube map.
+     * The direction vector is not normalized by default.
+     *
+     * Reference: https://en.wikipedia.org/wiki/Cube_mapping
+     */
+    fun toDirection(out: MutableDouble3 = MutableDouble3()): MutableDouble3 {
+        // convert range 0 to 1 to -1 to 1
+        val uc = 2.0 * u - 1.0
+        val vc = 2.0 * v - 1.0
+
+        when (side)
+        {
+            0 -> out.set(1.0, vc, -uc)  // POSITIVE X
+            1 -> out.set(-1.0, vc, uc)  // NEGATIVE X
+            2 -> out.set(uc,1.0, -vc)   // POSITIVE Y
+            3 -> out.set(uc,-1.0, vc)   // NEGATIVE Y
+            4 -> out.set(uc, vc,1.0)    // POSITIVE Z
+            5 -> out.set(-uc, vc,-1.0)  // NEGATIVE Z
+        }
+
+        return out
+    }
+
+    /**
+     * Return closest index of this cube map pos, assuming the cube map texture is stored each side at a time,
+     * with v-major order for the side.
+     * [textureSize] is the number of samples along one edge of the cube texture.
+     */
+    fun toCubeTextureIndex(textureSize: Int): Int {
+        val sideSize = textureSize * textureSize
+        val x = (u * (textureSize - 1)).roundToInt().clampTo(0, textureSize - 1)
+        val y = (v * (textureSize - 1)).roundToInt().clampTo(0, textureSize - 1)
+        return sideSize * side + textureSize * y + x
+    }
+
+    // IDEA: Function that returns the four neighboring texture index locations for this point, and the relative overlap for each.
+}
+
+/**
+ * Project a direction vector to a cube map side and texture position.
+ *
+ * Reference: https://en.wikipedia.org/wiki/Cube_mapping
+ */
+fun Double3.projectToCube(out: CubeMapPos = CubeMapPos()): CubeMapPos {
+    val absX = x.abs()
+    val absY = y.abs()
+    val absZ = z.abs()
+
+    val isXPositive = x > 0
+    val isYPositive = y > 0
+    val isZPositive = z > 0
+
+    var maxAxis = 0.0
+    var uc = 0.0
+    var vc = 0.0
+
+    // POSITIVE X
+    if (isXPositive && absX >= absY && absX >= absZ) {
+        // u (0 to 1) goes from +z to -z
+        // v (0 to 1) goes from -y to +y
+        maxAxis = absX
+        uc = -z
+        vc = y
+        out.side = 0
+    }
+
+    // NEGATIVE X
+    if (!isXPositive && absX >= absY && absX >= absZ) {
+        // u (0 to 1) goes from -z to +z
+        // v (0 to 1) goes from -y to +y
+        maxAxis = absX
+        uc = z
+        vc = y
+        out.side = 1
+    }
+
+    // POSITIVE Y
+    if (isYPositive && absY >= absX && absY >= absZ) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from +z to -z
+        maxAxis = absY
+        uc = x
+        vc = -z
+        out.side = 2
+    }
+
+    // NEGATIVE Y
+    if (!isYPositive && absY >= absX && absY >= absZ) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from -z to +z
+        maxAxis = absY
+        uc = x
+        vc = z
+        out.side = 3
+    }
+
+    // POSITIVE Z
+    if (isZPositive && absZ >= absX && absZ >= absY) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from -y to +y
+        maxAxis = absZ
+        uc = x
+        vc = y
+        out.side = 4
+    }
+
+    // NEGATIVE Z
+    if (!isZPositive && absZ >= absX && absZ >= absY) {
+        // u (0 to 1) goes from +x to -x
+        // v (0 to 1) goes from -y to +y
+        maxAxis = absZ
+        uc = -x
+        vc = y
+        out.side = 5
+    }
+
+    // Convert range from -1 to 1 to 0 to 1
+    out.u = 0.5 * (uc / maxAxis + 1.0)
+    out.v = 0.5 * (vc / maxAxis + 1.0)
+
+    return out
+}

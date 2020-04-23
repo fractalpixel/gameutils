@@ -27,6 +27,9 @@ class VoxelTerrainShaderProvider(): BaseShaderProvider() {
             }
             else -> {
                 // Create a new default shader for this type of renderable
+                // (need to pass in a config with the shader code, instead of the shader code and a default config,
+                //  because the renderable type specific #defines are added based on the config and the attributes of
+                //  the renderable (e.g. object diffuse color, etc.)).
                 return DefaultShader(renderable, defaultShaderConfig)
             }
         }

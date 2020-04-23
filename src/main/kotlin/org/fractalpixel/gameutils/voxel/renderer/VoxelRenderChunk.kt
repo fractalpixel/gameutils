@@ -17,6 +17,7 @@ import org.entityflakes.Entity
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
 import org.fractalpixel.gameutils.libgdxutils.buildWireframeBoxPart
 import org.fractalpixel.gameutils.lights.InfiniteLight
+import org.fractalpixel.gameutils.lights.LightProbes
 import org.fractalpixel.gameutils.lights.LightProvider
 import org.fractalpixel.gameutils.lights.SphericalLight
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
@@ -25,6 +26,7 @@ import org.fractalpixel.gameutils.utils.MeshPool
 import org.fractalpixel.gameutils.utils.Recyclable
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
 import org.fractalpixel.gameutils.voxel.distancefunction.ConstantFun
+import org.kwrench.geometry.double3.Double3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
 import org.kwrench.geometry.volume.Volume
@@ -41,7 +43,7 @@ import org.kwrench.geometry.volume.Volume
 //          PRO: Fast
 //          PRO: Uniform approach for all renderable geometry, moving entities cast shadows
 //          CON: Very complex to implement -- high risk of blocking project
-//          CON: Volumetric shading not included, requries separate solution
+//          CON: Volumetric shading not included, requires separate solution
 //          CON: Still requires shadow map for shadows, further increasing complexity
 //          CON: Radiosity requires separate approach
 //       C) Volumetric lighting
@@ -134,6 +136,8 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
     private var mesh: Mesh? = null
     var modelInstance: ModelInstance? = null
 
+    private var lightProbes: LightProbes? = null
+
     /**
      * True if the model has been created and is rendering.
      */
@@ -179,6 +183,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
     fun render(context: RenderingContext3D) {
         initializeModelIfCalculated()
 
+/*
         // Create relevant lights
         // TODO: Caache lights between invocations?
         val directionalLights = ArrayList<DirectionalLight>()
@@ -201,16 +206,22 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         val environment = context.environment!!
         directionalLights.forEach { environment.add(it) }
         pointLights.forEach { environment.add(it) }
+*/
+        val environment = context.environment!!
+
+        // TODO: Pass in light probe samples - place in an opengl object of some kind, for easier lookup?  Texture?  Maybe the probe class handles binding / rebinding an opengl texture?
+        //lightProbes
 
         // Render model instance if available
         val currentModelInstance = modelInstance
         if (currentModelInstance != null /* && isVisible(context.camera) */ ) {
-            context.modelBatch.render(currentModelInstance, environment)
+            context.modelBatch.render(currentModelInstance , environment)
         }
-
+/*
         // Remove added lights
         directionalLights.forEach { environment.remove(it) }
         pointLights.forEach { environment.remove(it) }
+ */
     }
 
     /* BUG: Frustrum culling doesn't seem to work correctly, keeps flickering between frames.
@@ -249,6 +260,10 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
         // Build shape from the surface points we found
         shape.updateMesh(createdMesh, false)
+
+        // Initialize light samplers for mesh
+        lightProbes = shape.createLightProbes()
+        lightProbes!!.calculateDirectLights(terrain.lightProvider)
 
         mesh = createdMesh
         return createdMesh
@@ -343,6 +358,12 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
     companion object {
         val emptyLightProvider = object : LightProvider {
             override fun forEachPointLight(volume: Volume, minimumSize: Double, visitor: (entity: Entity, location: Location, light: SphericalLight) -> Unit) {
+            }
+
+            override fun forEachPointLightInRange(
+                pos: Double3,
+                visitor: (entity: Entity, location: Location, light: SphericalLight, squaredDistance: Double) -> Unit
+            ) {
             }
 
             override fun forEachInfiniteLight(visitor: (entity: Entity, light: InfiniteLight) -> Unit) {
