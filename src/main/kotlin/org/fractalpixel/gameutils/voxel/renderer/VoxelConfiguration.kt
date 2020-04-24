@@ -50,7 +50,7 @@ data class VoxelConfiguration(
     val dashedDebugLines: Boolean = true,
     val debugLinesForEmptyBlocks: Boolean = false,
     val debugOutlines: Boolean = false,
-    val colorizeTerrainByLevel: Boolean = false) {
+    val colorizeTerrainByLevel: Boolean = true) {
 
     // The block corners in a chunk, so one more than blocks in each direction and one extra overlap covering/overlapping gaps.
     val overlap = 1 // Can be 0 (cracks), 1 (overlap in negative direction), or 2 (overlap in both directions).

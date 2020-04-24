@@ -20,6 +20,8 @@ class VoxelTerrainShader(): Shader {
     private var u_projViewTrans: Int = 0
     private var u_worldTrans: Int = 0
     private var u_color: Int = 0
+    private var u_level: Int = 0
+    private var u_blockSize: Int = 0
 
     private var camera: Camera? = null
     private var renderContext: RenderContext? = null
@@ -43,6 +45,8 @@ class VoxelTerrainShader(): Shader {
         u_projViewTrans = program.fetchUniformLocation("u_projViewTrans", pedanticMode)
         u_worldTrans = program.fetchUniformLocation("u_worldTrans", pedanticMode)
         u_color = program.fetchUniformLocation("u_color", pedanticMode)
+        u_level = program.fetchUniformLocation("u_level", pedanticMode)
+        u_blockSize = program.fetchUniformLocation("u_blockSize", pedanticMode)
 
         // TODO: Projection matrix, pos, normal, lights,
         // TODO: Use as reference: https://xoppa.github.io/blog/creating-a-shader-with-libgdx/
@@ -103,6 +107,9 @@ class VoxelTerrainShader(): Shader {
              */
 
             program.setUniformf(u_lodFadeDistances, fadeInStart, fadeInEnd, fadeOutStart, fadeOutEnd)
+
+            program.setUniformi(u_level, chunk.level)
+            program.setUniformf(u_blockSize, config.blockWorldSize(chunk.level).toFloat())
         }
         else {
             throw IllegalStateException("Expected renderable to have VoxelRenderChunk as userData object")

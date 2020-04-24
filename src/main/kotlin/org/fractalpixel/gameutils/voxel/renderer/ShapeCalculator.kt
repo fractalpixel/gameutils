@@ -4,9 +4,9 @@ import com.badlogic.gdx.math.Vector3
 import kotlinx.coroutines.*
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
 import org.fractalpixel.gameutils.libgdxutils.setMax
-import org.fractalpixel.gameutils.libgdxutils.setMin
 import org.fractalpixel.gameutils.utils.*
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
+import org.fractalpixel.gameutils.voxel.distancefunction.DistanceFun
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlock
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
@@ -34,12 +34,13 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
      */
     suspend fun buildShape(terrain: VoxelTerrain, pos: Int3, level: Int): ShapeBuilder? {
         val worldStep = configuration.blockWorldSize(level).toFloat()
+        val distanceFun = terrain.distanceFun
 
         // Determine if the chunk is all empty or solid using min and max bounds for the volume,
         // for quick skipping of chunks without content.
         val chunkVolume = MutableVolume()
         configuration.getChunkVolume(pos, level, chunkVolume)
-        if (!terrain.distanceFun.mayContainSurface(chunkVolume, worldStep.toDouble())) return null
+        if (!distanceFun.mayContainSurface(chunkVolume, worldStep.toDouble())) return null
 
         // Obtain a DepthBlock
         configuration.depthBlockPool.withObtained {
@@ -47,7 +48,7 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
             val depthBlock = it
 
             // Calculate distance values over the chunk
-            terrain.distanceFun.calculateBlock(
+            distanceFun.calculateBlock(
                 configuration.getChunkSamplingVolume(pos, level),
                 depthBlock,
                 configuration.depthBlockPool,
@@ -94,7 +95,7 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
                         voxelPos.set(x, y, z)
                         calculateVertexPosition(
                             shapeBuilder,
-                            terrain,
+                            distanceFun,
                             depthBlock,
                             index,
                             voxelPos,
@@ -124,7 +125,7 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
 
     private suspend inline fun calculateVertexPosition(
         shapeBuilder: ShapeBuilder,
-        terrain: VoxelTerrain,
+        terrainFun: DistanceFun,
         depthBlock: DepthBlock,
         index: Int,
         voxelPos: Int3,
@@ -211,7 +212,7 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
         tempPos.set(tempVec)
 
         // Determine normal
-        terrain.distanceFun.getNormal(tempPos, worldStep.toDouble(), tempNormal)
+        terrainFun.getNormal(tempPos, worldStep.toDouble(), tempNormal)
 
         // Create vertex for mesh
         val vertexIndex = shapeBuilder.addVertex(tempPos, tempNormal)
