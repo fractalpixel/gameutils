@@ -1,7 +1,12 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.GL20.GL_GEQUAL
+import com.badlogic.gdx.graphics.GL30
 import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider
+import org.entityflakes.Entity
 import org.fractalpixel.gameutils.layer.Layer3D
 import org.fractalpixel.gameutils.libgdxutils.loadShaderProvider
 import org.fractalpixel.gameutils.lights.LightSystem
@@ -51,19 +56,23 @@ class VoxelRendererLayer(val terrain: VoxelTerrain,
             detailLevel.updateCameraAndScrollTerrain(context)
         }
 
+        for (detailLevel in detailLevels) {
+            detailLevel.render(context)
+        }
+
+        /*
         if (firstRender) {
-            // The first time we render, render the layers in reverse order, ensuring that coarse, larege layers are
-            // calculated first and the detailed layers later.  Afterwards run in other order to prevent flickering gaps. // TODO: Find and fix them
+            // The first time we render, render the layers in reverse order, ensuring that coarse, large layers are
+            // calculated first and the detailed layers later.  Afterwards run in other order to avoid overdrawing and prevent flickering gaps. // TODO: Find and fix them
             for (detailLevel in detailLevels.reversed()) {
                 detailLevel.render(context)
             }
             firstRender = false
         }
         else {
-            for (detailLevel in detailLevels) {
-                detailLevel.render(context)
-            }
         }
+
+         */
     }
 
 }

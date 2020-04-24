@@ -35,13 +35,12 @@ import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
 import org.kwrench.geometry.volume.MutableVolume
 import org.kwrench.geometry.volume.Volume
-import org.kwrench.math.TauFloat
-import org.kwrench.math.fastFloor
-import org.kwrench.math.relPos
-import org.kwrench.math.round
+import org.kwrench.math.*
 import java.io.File
 import java.io.FileReader
 import java.lang.IllegalStateException
+import kotlin.math.max
+import kotlin.math.min
 
 
 // Utilities to make libgdx work a bit smoother with some kotlin features, as well as with the used utility libraries.
@@ -601,6 +600,29 @@ fun Vector2.toFloatArray(arrayOut: FloatArray = FloatArray(2), arrayStartPos: In
     arrayOut[arrayStartPos + 0] = x
     arrayOut[arrayStartPos + 1] = y
     return arrayOut
+}
+
+
+/**
+ * Set each coordinate of this vector to the minimum of the coordinate in this vector and in the other vector.
+ * Returns this vector.
+ */
+fun Vector3.setMin(other: Vector3): Vector3 {
+    x = min(x, other.x)
+    y = min(y, other.y)
+    z = min(z, other.z)
+    return this
+}
+
+/**
+ * Set each coordinate of this vector to the maximum of the coordinate in this vector and in the other vector.
+ * Returns this vector.
+ */
+fun Vector3.setMax(other: Vector3): Vector3 {
+    x = max(x, other.x)
+    y = max(y, other.y)
+    z = max(z, other.z)
+    return this
 }
 
 

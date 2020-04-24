@@ -12,6 +12,7 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.FloatArray
 import com.badlogic.gdx.utils.ShortArray
 import org.fractalpixel.gameutils.lights.LightProbes
+import java.lang.IllegalArgumentException
 
 
 /**
@@ -136,6 +137,24 @@ class ShapeBuilder(var wireframe: Boolean = false) {
     }
 
     /**
+     * Returns true if this shape builder contains a triangle defined by the specified indexes in the same direction (can be shifted).
+     */
+    fun containsTriangle(a: Short, b: Short, c: Short): Boolean {
+        for (t in 0 until triangleCount) {
+            val index = t * 3
+            val prev1 = indexes[index + 0]
+            val prev2 = indexes[index + 1]
+            val prev3 = indexes[index + 2]
+
+            if ((prev1 == a && prev2 == b && prev3 == c) ||
+                (prev1 == b && prev2 == c && prev3 == a) ||
+                (prev1 == c && prev2 == a && prev3 == b) ) return true
+        }
+
+        return false
+    }
+
+    /**
      * Adds a triangle between the specified vertex indexes
      */
     fun addTriangle(a: Short, b: Short, c: Short,
@@ -144,6 +163,11 @@ class ShapeBuilder(var wireframe: Boolean = false) {
                     updateNormals: Boolean = true) {
 
         if (a != b && a != c && b != c) {
+
+            /* TODO: Remove
+            // Check if triangle already added
+            if (containsTriangle(a, b, c)) throw IllegalArgumentException("Triangle $a, $b, $c already added")
+            */
 
             if (!invertFace || twoSided) {
                 addTriangleIndexes(a, b, c)

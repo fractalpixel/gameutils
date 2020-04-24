@@ -1,13 +1,16 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.GL20.*
 import com.badlogic.gdx.graphics.g3d.Renderable
 import com.badlogic.gdx.graphics.g3d.Shader
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.utils.RenderContext
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import org.fractalpixel.gameutils.libgdxutils.loadShaderProgram
+import java.lang.IllegalStateException
 
 class VoxelTerrainShader(): Shader {
 
@@ -33,10 +36,10 @@ class VoxelTerrainShader(): Shader {
         println("Source:\n" + program.fragmentShaderSource)
 
         // When true, requires that uniform / attribute is present and used
-        val pedanticMode = true
+        val pedanticMode = false
 
-//        u_cameraWorldPosition = program.fetchUniformLocation("u_cameraWorldPosition", pedanticMode)
-//        u_lodFadeDistances = program.fetchUniformLocation("u_lodFadeDistances", pedanticMode)
+        u_cameraWorldPosition = program.fetchUniformLocation("u_cameraWorldPosition", pedanticMode)
+        u_lodFadeDistances = program.fetchUniformLocation("u_lodFadeDistances", pedanticMode)
         u_projViewTrans = program.fetchUniformLocation("u_projViewTrans", pedanticMode)
         u_worldTrans = program.fetchUniformLocation("u_worldTrans", pedanticMode)
         u_color = program.fetchUniformLocation("u_color", pedanticMode)
@@ -57,10 +60,12 @@ class VoxelTerrainShader(): Shader {
         // TODO: Set proj view
         // TODO: Activate depth test, backface culling
 
+        Gdx.gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        Gdx.gl.glEnable(GL_BLEND)
+
         program.begin()
-//        program.setUniformf(u_cameraWorldPosition, camera!!.position)
+        program.setUniformf(u_cameraWorldPosition, camera!!.position)
         program.setUniformMatrix(u_projViewTrans, camera.combined)
-//        program.setUniformf(u_lodFadeDistances, 0f, 1f, 2f, 3f) // TODO: Get LOD fade distances
 
         currentContext = context
 
@@ -76,6 +81,32 @@ class VoxelTerrainShader(): Shader {
         // Object color.  Used for debugging // LATER: Disable debugging color eventually?
         val color = (renderable.material.get(ColorAttribute.Diffuse) as ColorAttribute).color
         program.setUniformf(u_color, color)
+
+
+        // Get detail level fade information from chunk
+        val chunk = renderable.userData
+        if (chunk is VoxelRenderChunk) {
+            val config = chunk.configuration
+            val fadeInStart = config.getFadeInStart(chunk.level)
+            val fadeInEnd = config.getFadeInEnd(chunk.level)
+            val fadeOutStart = config.getFadeOutStart(chunk.level)
+            val fadeOutEnd = config.getFadeOutEnd(chunk.level)
+
+            /*
+            // DEBUG: prints
+            println("")
+            println("chunk.level = ${chunk.level}")
+            println("fadeInStart = ${fadeInStart}")
+            println("fadeInEnd = ${fadeInEnd}")
+            println("fadeOutStart = ${fadeOutStart}")
+            println("fadeOutEnd = ${fadeOutEnd}")
+             */
+
+            program.setUniformf(u_lodFadeDistances, fadeInStart, fadeInEnd, fadeOutStart, fadeOutEnd)
+        }
+        else {
+            throw IllegalStateException("Expected renderable to have VoxelRenderChunk as userData object")
+        }
 
         // Set world trans
         program.setUniformMatrix(u_worldTrans, renderable.worldTransform)

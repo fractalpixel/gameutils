@@ -545,3 +545,15 @@ fun Double3.projectToCube(out: CubeMapPos = CubeMapPos()): CubeMapPos {
 
     return out
 }
+
+
+fun Volume.containsExclusive(p: Vector3): Boolean = this.containsExclusive(p.x.toDouble(), p.y.toDouble(), p.z.toDouble())
+
+fun Volume.containsExclusive(p: Double3): Boolean = this.containsExclusive(p.x, p.y, p.z)
+
+fun Volume.containsExclusive(x: Double, y: Double, z: Double): Boolean {
+    if (empty) return false
+    return x >= minX && x < maxX &&
+           y >= minY && y < maxY &&
+           z >= minZ && z < maxZ
+}

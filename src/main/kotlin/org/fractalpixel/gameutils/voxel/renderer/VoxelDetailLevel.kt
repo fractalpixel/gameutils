@@ -1,5 +1,7 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.math.Vector3
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -126,6 +128,7 @@ class VoxelDetailLevel(
     }
 
     fun render(context: RenderingContext3D) {
+
         chunkBuffer.iterate(tempchunkPos) { globalPos, localPos, chunkJob ->
             // Get the chunk if it has been calculated and is not null
             val chunk = getChunkForJob(chunkJob)
@@ -136,6 +139,8 @@ class VoxelDetailLevel(
             }
         }
     }
+
+    // TODO: If higher LOD chunks are missing, do not alpha fade over them.. how to do that logic?  Chunk-specific fade-over?  Or just skip whole layer if missing chunk?
 
     private inline fun getChunkForJob(chunkJob: Deferred<VoxelRenderChunk?>?): VoxelRenderChunk? {
         return if (chunkJob?.isCompleted == true) chunkJob.getCompleted() else null
@@ -165,8 +170,7 @@ class VoxelDetailLevel(
                 chunkPos.y * 2 + 1,
                 chunkPos.z * 2 + 1)
 
-            // CHECK: Seems his is not needed with the new alignment?
-//            tempVolume.expand(1) // Require at least 1 chunk for smooth transition
+            tempVolume.expand(2) // Require at least 2 chunks for smooth transition
 
             !moreDetailedLevel.containsChunks(tempVolume)
         }

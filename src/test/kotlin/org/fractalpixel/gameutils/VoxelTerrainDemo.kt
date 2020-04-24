@@ -231,6 +231,7 @@ fun main(args: Array<String>) {
     config.title = "Voxel Terrain Demo"
     config.width = 1200
     config.height = 800
-    config.depth = 24
+    config.depth = 16
+    config.stencil = 8
     LwjglApplication(VoxelTerrainDemo(), config)
 }

@@ -40,16 +40,17 @@ import kotlin.math.pow
 // FEATURE: Adaptively adjust chunk size based on performance?  To some degree at least?
 // BUG: There are sometimes chunks that don't get released, more clearly e.g. with levelCount 3, mostDetailed 0, levelSize 8, chunk size 24
 data class VoxelConfiguration(
-    val detailLevelCount: Int = 4, //10,
-    val mostDetailedDetailLevel: Int = 2, //-2,
-    val chunkSize: Int = 28, //24,
-    val levelSize: Int = 8, // FIXME: Lot of overlapping layers rendered with low values..
+    val detailLevelCount: Int = 10, //10,
+    val mostDetailedDetailLevel: Int = 0, //-2,
+    val chunkSize: Int = 20,//28, //24,
+    val levelSize: Int = 9, // FIXME: Lot of overlapping layers rendered with low values..
     val baseDetailLevelBlockSizeMeters: Double = 1.0,
-    val debugWireframe: Boolean = true,
-    val debugLines: Boolean = true,
+    val wireframeTerrain: Boolean = false,
+    val debugLines: Boolean = false,
+    val dashedDebugLines: Boolean = true,
     val debugLinesForEmptyBlocks: Boolean = false,
     val debugOutlines: Boolean = false,
-    val colorizeTerrainByLevel: Boolean = true) {
+    val colorizeTerrainByLevel: Boolean = false) {
 
     // The block corners in a chunk, so one more than blocks in each direction and one extra overlap covering/overlapping gaps.
     val overlap = 1 // Can be 0 (cracks), 1 (overlap in negative direction), or 2 (overlap in both directions).
@@ -191,9 +192,6 @@ data class VoxelConfiguration(
         // Get corner chunk
         cornerChunkOut.sub(levelSize / 2)
 
-        // Align to even chunk coordinates.
-        // CHECK: Align - does this skew the position sideways?
-        cornerChunkOut.divide(2).scale(2).add(Int3.ONES)
         return cornerChunkOut
     }
 
@@ -220,6 +218,54 @@ data class VoxelConfiguration(
     ): Color {
         var hue = mix(relativeLevel(level), 0.15, 0.7)
         return GenColor(hue, if (mayContainSurface) 0.9 else 0.25, if (hasMesh) 0.8 else if (mayContainSurface) 0.3 else 0.1, 1.0, HSLColorSpace).toColor(GdxColorType)
+    }
+
+    private fun getVisibleChunkManhattanRadius(level: Int): Float {
+        return blockWorldSize(level).toFloat() * chunkSize * (levelSize - 1) * 0.5f
+    }
+
+    // TODO: Slight gap between fade in start and fade out end of previous layer, gives engine time to generate chunks
+
+    /**
+     * (Manhattan) distance from camera that the terrain should start to fade in at the specified [level].
+     */
+    fun getFadeInStart(level: Int): Float {
+        return if (level <= mostDetailedDetailLevel) 0f
+        else return getFadeOutStart(level - 1)
+        /*
+        val chunkWidth = blockWorldSize(level - 1).toFloat() * chunkSize
+        return if (level <= mostDetailedDetailLevel) 0f
+        else getVisibleChunkManhattanRadius(level - 1) - chunkWidth
+        */
+    }
+
+    /**
+     * (Manhattan) distance from camera that the terrain should have completely faded in at the specified [level].
+     */
+    fun getFadeInEnd(level: Int): Float {
+        return if (level <= mostDetailedDetailLevel) 0f
+        else return getFadeOutEnd(level - 1)
+/*
+        val chunkWidth = blockWorldSize(level - 1).toFloat() * chunkSize
+        return if (level <= mostDetailedDetailLevel) 0f
+        else getVisibleChunkManhattanRadius(level - 1)
+
+ */
+    }
+
+    /**
+     * (Manhattan) distance from camera that the terrain should start to fade out at the specified [level].
+     */
+    fun getFadeOutStart(level: Int): Float {
+        val chunkWidth = blockWorldSize(level).toFloat() * chunkSize
+        return getVisibleChunkManhattanRadius(level) - chunkWidth
+    }
+
+    /**
+     * (Manhattan) distance from camera that the terrain should have completely faded out at the specified [level].
+     */
+    fun getFadeOutEnd(level: Int): Float {
+        return getVisibleChunkManhattanRadius(level)
     }
 
 

@@ -1,6 +1,5 @@
 package org.fractalpixel.gameutils.voxel.renderer
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
@@ -8,9 +7,6 @@ import com.badlogic.gdx.graphics.Mesh
 import com.badlogic.gdx.graphics.g3d.Material
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
-import com.badlogic.gdx.graphics.g3d.environment.BaseLight
-import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
-import com.badlogic.gdx.graphics.g3d.environment.PointLight
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.math.collision.BoundingBox
@@ -191,7 +187,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
 /*
         // Create relevant lights
-        // TODO: Caache lights between invocations?
+        // TODO: Cache lights between invocations?
         val directionalLights = ArrayList<DirectionalLight>()
         val pointLights = ArrayList<PointLight>()
 
@@ -301,7 +297,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
                 corner.add(configuration.blockTypeDebugLineSpacing * sideLen)
                 sideLen *= (1f - 2f * configuration.blockTypeDebugLineSpacing)
                 modelBuilder.buildWireframeBoxPart(
-                    corner, sideLen, color = wireframeColor, id = wireframeId, dashed = true, segments = configuration.chunkSize
+                    corner, sideLen, color = wireframeColor, id = wireframeId, dashed = configuration.dashedDebugLines, segments = configuration.chunkSize
                 )
             }
         }
@@ -313,7 +309,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
         if (createdMesh.numVertices > 0 && createdMesh.numIndices > 0) {
             val material = Material()
             material.set(ColorAttribute.createDiffuse(0.8f * debugColor.r, 0.8f * debugColor.g, 0.8f * debugColor.b, 1f))
-            val primitive = if (configuration.debugWireframe) GL20.GL_LINES else GL20.GL_TRIANGLES
+            val primitive = if (configuration.wireframeTerrain) GL20.GL_LINES else GL20.GL_TRIANGLES
             modelBuilder.part(voxelTerrainChunkId, createdMesh, primitive, material)
         }
 
@@ -322,6 +318,7 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
 
         // Create instance of model
         val instance = ModelInstance(model)
+        instance.userData = this // Store reference to this chunk in the model instance, used by VoxelTerrainShader to get detail level info.
         modelInstance = instance
 
         /*

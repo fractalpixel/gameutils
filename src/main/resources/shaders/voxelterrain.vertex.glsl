@@ -31,5 +31,8 @@ void main() {
     // See e.g. https://www.gamasutra.com/blogs/BranoKemen/20090812/85207/Logarithmic_Depth_Buffer.php  or  https://outerra.blogspot.com/2012/11/maximizing-depth-buffer-range-and.html
     gl_Position.z = log(C * gl_Position.z + 1.0) / log(C * Far + 1.0) * gl_Position.w; // Pre-multiply with gl_Position.w as the pipeline divides with gl_Position.w
 
+    // TODO: When creating vertexes, make slight z-boost for each further away layer (or interpolate over each layer
+    //       depending on camera distance?) to lift next layer over the previous.  That way we do not need to edit the frag depth in the fragment shader.
+
 
 }

@@ -3,16 +3,16 @@ package org.fractalpixel.gameutils.voxel.renderer
 import com.badlogic.gdx.math.Vector3
 import kotlinx.coroutines.*
 import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
-import org.fractalpixel.gameutils.utils.RecyclingPool
-import org.fractalpixel.gameutils.utils.getCoordinate
-import org.fractalpixel.gameutils.utils.isCurrentJobCanceled
-import org.fractalpixel.gameutils.utils.setCoordinate
+import org.fractalpixel.gameutils.libgdxutils.setMax
+import org.fractalpixel.gameutils.libgdxutils.setMin
+import org.fractalpixel.gameutils.utils.*
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
 import org.fractalpixel.gameutils.voxel.distancefunction.utils.DepthBlock
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
 import org.kwrench.geometry.volume.MutableVolume
+import org.kwrench.geometry.volume.Volume
 import kotlin.math.abs
 
 /**
@@ -63,7 +63,7 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
             val shapeBuilder = shapeBuilderPool.obtain()
 
             // Use wireframe for shape if debug wireframe view is on (not possible to toggle quickly without rebuilding shapes)
-            shapeBuilder.wireframe = configuration.debugWireframe
+            shapeBuilder.wireframe = configuration.wireframeTerrain
 
             // Iterate voxel space
             val sideCellCount = configuration.chunkCornersSize - 1
@@ -105,7 +105,8 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
                             indexStepDelta,
                             tempVec,
                             tempPos,
-                            tempNormal
+                            tempNormal,
+                            chunkVolume
                         )
 
                         index++
@@ -134,7 +135,8 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
         indexStepDelta: Int3,
         tempVec: Vector3,
         tempPos: Vector3,
-        tempNormal: Vector3
+        tempNormal: Vector3,
+        chunkVolume: Volume
     ) {
         // Read depth field information at voxel corners, construct a mask on whether the corner is inside or outside the shape
         var cornerMask = 0
@@ -151,7 +153,7 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
                         yp + cy * worldStep,
                         zp + cz * worldStep
                     )
-                    cornerMask = cornerMask or (if (sample > 0) 1 shl g else 0 )
+                    cornerMask = cornerMask or (if (sample > 0) (1 shl g) else 0 )
                     g++
                 }
             }
@@ -234,24 +236,25 @@ class ShapeCalculator(private val configuration: VoxelConfiguration) {
             val du = indexStepDelta.getCoordinate(iu)
             val dv = indexStepDelta.getCoordinate(iv);
 
+            // Determine face corners
+            val vertex1 = voxelVertexIndexes[index]
+            val vertex2 = voxelVertexIndexes[index - du]
+            val vertex3 = voxelVertexIndexes[index - du - dv]
+            val vertex4 = voxelVertexIndexes[index - dv]
+
+            // Only include faces that have the vertex with highest x,y and z coordinate in this chunk.
+            // That way seam faces are only included once (note that due to the order the vertexes are created(?), this
+            // doesn't work if checking for the minimum coordinate).
+            tempVec.set(shapeBuilder.getPos(vertex1, tempPos))
+            tempVec.setMax(shapeBuilder.getPos(vertex2, tempPos))
+            tempVec.setMax(shapeBuilder.getPos(vertex3, tempPos))
+            tempVec.setMax(shapeBuilder.getPos(vertex4, tempPos))
+            if (!chunkVolume.containsExclusive(tempVec)) continue
+
+            // Add face
             // Remember to flip orientation depending on the sign of the corner.
-            if ((cornerMask and 1) != 0) {
-                shapeBuilder.addQuad(
-                    voxelVertexIndexes[index],
-                    voxelVertexIndexes[index -du],
-                    voxelVertexIndexes[index -du -dv],
-                    voxelVertexIndexes[index -dv],
-                    updateNormals = false
-                )
-            } else {
-                shapeBuilder.addQuad(
-                    voxelVertexIndexes[index],
-                    voxelVertexIndexes[index -dv],
-                    voxelVertexIndexes[index -du -dv],
-                    voxelVertexIndexes[index -du],
-                    updateNormals = false
-                )
-            }
+            val invertFace = (cornerMask and 1) == 0
+            shapeBuilder.addQuad(vertex1, vertex2, vertex3, vertex4, invertFace = invertFace, updateNormals = false)
         }
     }
 
