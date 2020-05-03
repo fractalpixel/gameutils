@@ -168,7 +168,7 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         val spaceEntity = world.createEntity(space, entitySpaceRenderer3D)
         world.tagEntity(spaceEntity, "space".toSymbol())
 
-        addLights(world)
+//        addLights(world)
     }
 
     private fun addLights(world: World) {

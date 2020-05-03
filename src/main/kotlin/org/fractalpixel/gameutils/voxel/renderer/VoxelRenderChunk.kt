@@ -185,6 +185,8 @@ class VoxelRenderChunk(val configuration: VoxelConfiguration): Recyclable {
     fun render(context: RenderingContext3D) {
         initializeModelIfCalculated()
 
+
+
 /*
         // Create relevant lights
         // TODO: Cache lights between invocations?
