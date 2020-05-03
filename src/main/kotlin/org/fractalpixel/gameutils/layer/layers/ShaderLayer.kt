@@ -2,95 +2,44 @@ package org.fractalpixel.gameutils.layer.layers
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.Pixmap
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.Sprite
-import com.badlogic.gdx.graphics.glutils.ShaderProgram
+import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.g3d.Material
+import com.badlogic.gdx.graphics.g3d.ModelInstance
+import com.badlogic.gdx.graphics.g3d.Shader
+import com.badlogic.gdx.math.Vector3
 import org.entityflakes.Entity
-import org.fractalpixel.gameutils.layer.Layer2D
-import org.fractalpixel.gameutils.rendering.RenderingContext2D
+import org.fractalpixel.gameutils.layer.Layer3D
+import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
+import org.fractalpixel.gameutils.libgdxutils.SingleShaderProvider
+import org.fractalpixel.gameutils.rendering.RenderingContext3D
 
 
 /**
- *
+ * Simple layer that just draws a screen-sized quad and uses the specified [shader] to render it.
+ * The [shader] is disposed when this layer is disposed.
  */
-class ShaderLayer(val fragmentShader: String = defaultFragmentShader,
-                  val vertexShader: String = defaultVertexShader): Layer2D() {
+open class ShaderLayer(val shader: Shader): Layer3D(SingleShaderProvider(shader)) {
 
-    private lateinit var sprite: Sprite
-    private lateinit var emptyTexture: Texture
-    private lateinit var shaderProgram: ShaderProgram
-
-    init {
-        clearStencilBuffer = true
-        clearDepthBuffer = true
-        clearColorBufferToColor = Color.BLACK
-    }
+    private lateinit var screenQuad: ModelInstance
 
     override fun doInit(entity: Entity) {
-        emptyTexture = Texture(64, 64, Pixmap.Format.RGB888)
-        sprite = Sprite(emptyTexture)
-
-        shaderProgram = ShaderProgram(vertexShader, fragmentShader)
+        // Build screen-covering quad
+        val builder = ShapeBuilder()
+        builder.addVertex(Vector3(-1f, 1f, 0f))
+        builder.addVertex(Vector3(1f, 1f, 0f))
+        builder.addVertex(Vector3(1f, -1f, 0f))
+        builder.addVertex(Vector3(-1f, -1f, 0f))
+        builder.addQuad(0, 1, 2, 3, updateNormals = false)
+        screenQuad = ModelInstance(builder.createModel(Material(), normalizeNormals = false))
     }
 
-    override fun render(context: RenderingContext2D) {
-        sprite.setSize(Gdx.graphics.width.toFloat(),
-                       Gdx.graphics.height.toFloat())
-
-        val batch = context.spriteBatch
-        val prevShader = batch.shader
-        batch.shader = shaderProgram
-        batch.draw(sprite,
-                   sprite.x, sprite.y,
-                   sprite.width, sprite.height);
-        batch.shader = prevShader
+    override fun render(context: RenderingContext3D) {
+        context.modelBatch.render(screenQuad)
     }
 
     override fun doDispose() {
-        shaderProgram.dispose()
-        emptyTexture.dispose()
+        screenQuad.model.dispose()
+        shader.dispose()
     }
 
-    companion object {
-        val defaultVertexShader: String =
-            """
-            attribute vec4 a_position;
-            attribute vec4 a_color;
-            attribute vec2 a_texCoord;
-
-            uniform mat4 u_projTrans;
-
-            varying vec4 v_color;
-            varying vec2 v_texCoords;
-
-            void main()
-            {
-                v_color = a_color;
-                v_color.a = v_color.a * (256.0/255.0);
-                v_texCoords = a_texCoord + 0;
-                gl_Position =  u_projTrans * a_position;
-            }
-            """
-
-        val defaultFragmentShader: String =
-                """
-                #ifdef GL_ES
-                #define LOWP lowp
-                    precision mediump float;
-                #else
-                    #define LOWP
-                #endif
-
-                varying LOWP vec4 v_color;
-                varying vec2 v_texCoords;
-
-                uniform sampler2D u_texture;
-
-                void main()
-                {
-                    gl_FragColor = v_color * texture2D(u_texture, v_texCoords);
-                }
-                """
-    }
 }

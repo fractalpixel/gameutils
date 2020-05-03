@@ -151,23 +151,26 @@ class VoxelTerrainDemo: Game("Voxel Terrain Demo") {
         // REFACTOR: Pass near and far clipping plane to shader.  Use near clipping plane as C (?).
 
         // Voxel terrain
-        val voxelRendererLayer = VoxelRendererLayer(terrain)
-        voxelRendererLayer.context.camera = cameraSystem.camera
+        val voxelRendererLayer = org.fractalpixel.gameutils.voxel.renderer2.VoxelRendererLayer(terrain)
+//        voxelRendererLayer.context.camera = cameraSystem.camera
         voxelRendererLayer.depth = 1.0
-        voxelRendererLayer.clearColorBufferToColor = Color.DARK_GRAY
-        initRenderingContext(voxelRendererLayer.context, world)
+//        voxelRendererLayer.clearColorBufferToColor = Color.DARK_GRAY
+//        initRenderingContext(voxelRendererLayer.context, world)
         world.createEntity(voxelRendererLayer)
 
         // Entity space & rendering of the entities in it
         space = BruteForceEntitySpace()
 //        val entitySpaceRenderer3D = EntitySpaceRenderer3D()
-        val entitySpaceRenderer3D = EntitySpaceRenderer3D(shaderProvider = voxelRendererLayer.context.shaderProvider)
+
+//        val entitySpaceRenderer3D = EntitySpaceRenderer3D(shaderProvider = voxelRendererLayer.context.shaderProvider)
+        /*
+        val entitySpaceRenderer3D = EntitySpaceRenderer3D()
         entitySpaceRenderer3D.context.camera = cameraSystem.camera
         entitySpaceRenderer3D.clearDepthBuffer = false
         entitySpaceRenderer3D.depth = 2.0
         val spaceEntity = world.createEntity(space, entitySpaceRenderer3D)
         world.tagEntity(spaceEntity, "space".toSymbol())
-
+*/
 //        addLights(world)
     }
 

@@ -1,15 +1,15 @@
-package org.fractalpixel.gameutils.voxel.renderer
+package org.fractalpixel.gameutils.voxel.renderer2.impl
 
 import com.badlogic.gdx.math.Vector3
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
-import org.fractalpixel.gameutils.libgdxutils.ShapeBuilder
 import org.fractalpixel.gameutils.rendering.RenderingContext3D
 import org.fractalpixel.gameutils.utils.PanBuffer
 import org.fractalpixel.gameutils.utils.RecyclingPool
 import org.fractalpixel.gameutils.utils.all
 import org.fractalpixel.gameutils.voxel.VoxelTerrain
+import org.fractalpixel.gameutils.voxel.renderer2.*
 import org.kwrench.geometry.int3.Int3
 import org.kwrench.geometry.int3.MutableInt3
 import org.kwrench.geometry.intvolume.IntVolume
@@ -19,17 +19,12 @@ import org.kwrench.geometry.intvolume.MutableIntVolume
  * Holds all voxel chunks at a specific detail level.
  */
 // IDEA: Have extra non-visible layer in each direction, where the chunks are being asynchronously loaded,
-//       so that when they get into view, most/all are already loaded.  -- this might be already handled with the
-//       odd-overlap alignment - instead do not show furthest away chunk detail in a detail level,
-//       so that chunks have time to get loaded before they need to be shown
-
-// BUG: Chunks occasionally flicker away for one frame, appears to happen when they scroll out of view - should the chunk buffer perhaps be synchronized?
+//       so that when they get into view, most/all are already loaded.
 class VoxelDetailLevel(
     val terrain: VoxelTerrain,
     val level: Int,
     val configuration: VoxelConfiguration,
     val chunkPool: RecyclingPool<VoxelRenderChunk>,
-    val shapeCalculatorPool: RecyclingPool<ShapeCalculator>,
     val moreDetailedLevel: VoxelDetailLevel?
 ) {
 
@@ -39,75 +34,70 @@ class VoxelDetailLevel(
     private val tempPos = MutableInt3()
     private val tempchunkPos = MutableInt3()
 
-    private val chunkBuffer =
-        PanBuffer<Deferred<VoxelRenderChunk?>>(
-            configuration.levelExtent,
-            disposer = {
-                // NOTE: When this was run asynchronously, it built up a huge backlog of calculators,
-                //       as stopping calculations got backlogged by creating new calculations, so don't do that.
-                //       Release chunks and call cancels immediately when a chunk scrolls out.
-                val jobToDispose = it
-                runBlocking {
-                    if (jobToDispose.isCompleted) {
-                        // Release any completed chunk
-                        val chunk = jobToDispose.getCompleted()
-                        if (chunk != null) chunkPool.release(chunk)
-                    } else {
-                        // Cancel any ongoing job
-                        jobToDispose.cancel()
-                    }
+    private val chunkBuffer = PanBuffer<Deferred<VoxelRenderChunk?>>(
+        configuration.levelExtent,
+        disposer = {
+            // NOTE: When this was run asynchronously, it built up a huge backlog of calculators,
+            //       as stopping calculations got backlogged by creating new calculations, so don't do that.
+            //       Release chunks and call cancels immediately when a chunk scrolls out.
+            val jobToDispose = it
+            runBlocking {
+                if (jobToDispose.isCompleted) {
+                    // Release any completed chunk
+                    val chunk = jobToDispose.getCompleted()
+                    if (chunk != null) chunkPool.release(chunk)
                 }
-            }) { pos ->
-
-            // Need to copy this, as it is used in async method
-            val p = MutableInt3(pos)
-
-            val job = VoxelCoroutineScope.async {
-
-                // IDEA: If current terrain calculation takes too much of the frame time (configurable parameter),
-                //       delay calculating terrain somewhat (delay high resolutions more), to wait for time and to allow it to
-                //       scroll out of the view if we are moving fast. -- Is this still the sensible solution?  Maybe.
-                // TODO: Ideally newly calculated terrain should fade in over time if it doesn't appear a the edges of the detail level.
-
-                // Calculate shape
-                val shape = calculateShape(terrain, level, p)
-
-                // Create chunk if shape was not null
-                if (shape != null) {
-
-                    // Reuse or create new chunk
-                    val chunk = chunkPool.obtain()
-
-                    // Initialize chunk
-                    chunk.init(terrain, level, p, shape)
-
-                    // Return configured chunk
-                    chunk
-                } else {
-                    // No shape for chunk, leave it empty
-                    null
+                else {
+                    // Cancel any ongoing job
+                    jobToDispose.cancel()
                 }
             }
-            //runBlocking { job.await() }
-            job
-        }
+        }) { pos ->
 
-    /**
-     * Starts building the shape of this chunk in the background.
-     * Returns immediately, sets the [meshCalculated] flag to false when ready.
-     */
-    private suspend fun calculateShape(terrain: VoxelTerrain, level: Int, chunkPos: Int3): ShapeBuilder? {
+        // Create new chunk
 
-        // Get a mesh calculator instance (has various memory structures used during calculation)
-        val meshCalculator = shapeCalculatorPool.obtain()
-        try {
-            // Create shape
-            return meshCalculator.buildShape(terrain, chunkPos, level)
-        } finally {
-            // Release calculator
-            shapeCalculatorPool.release(meshCalculator)
+        // Need to copy this, as it is used in async method
+        val p = MutableInt3(pos)
+
+        val job = VoxelCoroutineScope.async {
+
+            null
+
+            // TODO
+
+            /*
+
+            // IDEA: If current terrain calculation takes too much of the frame time (configurable parameter),
+            //       delay calculating terrain somewhat (delay high resolutions more), to wait for time and to allow it to
+            //       scroll out of the view if we are moving fast. -- Is this still the sensible solution?  Maybe.
+            // TODO: Ideally newly calculated terrain should fade in over time if it doesn't appear a the edges of the detail level.
+
+            // Calculate shape
+            val shape = calculateShape(terrain, level, p)
+
+            // Create chunk if shape was not null
+            if (shape != null) {
+
+                // Reuse or create new chunk
+                val chunk = chunkPool.obtain()
+
+                // Initialize chunk
+                chunk.init(terrain, level, p, shape)
+
+                // Return configured chunk
+                chunk
+            }
+            else {
+                // No shape for chunk, leave it empty
+                null
+            }
+
+             */
         }
+        //runBlocking { job.await() }
+        job
     }
+
 
     fun updateCameraPos(pos: Vector3) {
 

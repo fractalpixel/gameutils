@@ -1,8 +1,5 @@
-package org.fractalpixel.gameutils.voxel.renderer
+package org.fractalpixel.gameutils.utils
 
-import org.fractalpixel.gameutils.utils.isAllZeroes
-import org.fractalpixel.gameutils.utils.iterate
-import org.fractalpixel.gameutils.utils.modPositive
 import org.kwrench.checking.Check
 import org.kwrench.geometry.int3.ImmutableInt3
 import org.kwrench.geometry.int3.Int3

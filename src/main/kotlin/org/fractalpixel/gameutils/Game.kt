@@ -18,6 +18,7 @@ import java.util.ArrayList
 /**
  * A LibGDX game with an entity system.
  */
+// FEATURE: Some kind of immediate mode (debugging) UI, that can show e.g. memory usage graphs and other stats.
 abstract class Game(override val applicationName: String,
                     override val resourcePath: String = "",
                     override val preferencesKey: Symbol = (applicationName + "_preferences").toIdentifier().toSymbol(),
