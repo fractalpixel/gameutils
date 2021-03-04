@@ -528,8 +528,8 @@ class LayeredShapeBuilder(var shapeBuilder: ShapeBuilder? = null) {
     private fun buildQuad(shapeBuilder: ShapeBuilder, currentIndex1: Int, currentIndex2: Int, prevIndex1: Int, prevIndex2: Int, invertFaces: Boolean) {
         shapeBuilder.addQuad(currentIndexes[currentIndex1],
                              currentIndexes[currentIndex2],
-                             previousIndexes[prevIndex1],
                              previousIndexes[prevIndex2],
+                             previousIndexes[prevIndex1],
                              invertFace = invertFaces)
     }
 
