@@ -10,7 +10,7 @@ import org.fractalpixel.gameutils.rendering.RenderingContext3D
  */
 abstract class Layer3D(shaderProvider: ShaderProvider? = null) : LayerBase() {
 
-    override val context: RenderingContext3D = DefaultRenderingContext3D(shaderProvider)
+    override var context: RenderingContext3D = DefaultRenderingContext3D(shaderProvider)
 
     /**
      * The camera used by this layer.
